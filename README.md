@@ -23,6 +23,7 @@
 ### 直接试示例
 
 仓库自带一份 7 题的演示页（计算机网络基础），双击 `examples/demo.html` 即可。如果仓库开启了 GitHub Pages，也可以在线打开 `examples/demo.html`。
+**[▶ 在线试玩（7 题演示）](https://slowburn1701.github.io/quiz-bank-page/examples/demo.html)**
 
 ### 用现成题库构建
 
