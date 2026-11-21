@@ -6,8 +6,6 @@
 
 它原本是一个 DeepSeek Harness（DSH）技能：把提取、校验、构建、自检四步固化下来，换课程只换题库，页面不用重做。
 
-**在线试玩**：<https://slowburn1701.github.io/quiz-bank-page/examples/demo.html>（仓库开启 Pages 后可用；也可以直接双击 `examples/demo.html`）
-
 ![整套试卷](docs/screenshots/paper.png)
 
 ## 特性
@@ -27,6 +25,8 @@
 ### 直接试示例
 
 仓库自带一份 7 题的演示页（计算机网络基础），双击 `examples/demo.html` 即可；开了 Pages 也可以在线看。
+
+**[▶ 在线试玩（7 题演示）](https://slowburn1701.github.io/quiz-bank-page/examples/demo.html)**
 
 ### 用现成题库构建
 
