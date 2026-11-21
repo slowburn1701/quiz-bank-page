@@ -1,0 +1,6 @@
+chrome-profile/
+downloads/
+quiz-test/
+__pycache__/
+*.pyc
+.DS_Store
