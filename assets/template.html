@@ -103,6 +103,7 @@
   @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
   .foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px;min-height:46px}
+  .footbtns{display:flex;gap:10px;margin-left:auto}
   .kbdhint{font-size:12px;color:var(--muted);letter-spacing:.3px}
   .btn{
     font:inherit;font-weight:800;font-size:14px;letter-spacing:.5px;
@@ -167,6 +168,18 @@
   .scorebox div{border:2px solid var(--ink);background:var(--paper);padding:8px 16px;min-width:96px}
   .scorebox b{display:block;font-size:23px;line-height:1.2;font-variant-numeric:tabular-nums}
   .scorebox span{font-size:10.5px;letter-spacing:2px;color:var(--muted)}
+  .pnav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+  .pnav button{aspect-ratio:1/1;display:grid;place-items:center;padding:0;border:1.5px solid var(--line);background:var(--card);color:var(--muted);font:inherit;font-size:12px;font-weight:800;cursor:pointer;font-variant-numeric:tabular-nums}
+  .pnav button:hover{border-color:var(--ink);color:var(--ink)}
+  .pnav button.ok{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+  .pnav button.bad{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+  .pnav button.cur{outline:3px solid var(--blue);outline-offset:1px}
+  .pnavlegend{display:flex;align-items:center;gap:10px;margin:10px 0 0;font-size:11px;color:var(--muted)}
+  .pnavlegend .sw{width:10px;height:10px;border:1.5px solid var(--line);background:var(--card);display:inline-block}
+  .pnavlegend .sw.ok{background:var(--green-bg);border-color:var(--green)}
+  .pnavlegend .sw.bad{background:var(--red-bg);border-color:var(--red)}
+  #paperNavPanel{position:sticky;top:16px;z-index:4}
+  .pq.flash{outline:3px solid var(--blue);outline-offset:2px}
   .pq{background:var(--card);border:2px solid var(--ink);padding:18px 20px 16px;margin-bottom:14px}
   .pqhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
   .pqno{background:var(--ink);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:1px;padding:3px 9px}
@@ -277,7 +290,10 @@
           <div class="opts" id="opts"></div>
           <div class="fb" id="fb" role="status" aria-live="polite" hidden></div>
           <div class="foot">
-            <button class="btn primary" id="nextBtn" type="button" hidden>下一题<span class="kbd">Enter</span></button>
+            <div class="footbtns">
+              <button class="btn" id="prevBtn" type="button" hidden>上一题</button>
+              <button class="btn primary" id="nextBtn" type="button" hidden>下一题<span class="kbd">Enter</span></button>
+            </div>
             <span class="kbdhint" id="kbdHint">A / B / C / D 或 1–4 作答</span>
           </div>
         </article>
@@ -300,6 +316,13 @@
         <p class="mininote">进度自动保存在本机浏览器；换电脑或清缓存会从零开始。</p>
       </div>
 
+      <div class="panel" id="paperNavPanel" hidden>
+        <h3>试卷总览 <span class="badge" id="paperNavDone">0</span></h3>
+        <div class="pnav" id="paperNav"></div>
+        <p class="pnavlegend"><i class="sw ok"></i>答对 <i class="sw bad"></i>答错 <i class="sw"></i>未答</p>
+        <p class="mininote">点题号跳到对应题目；答对变绿、答错变红，未答保持无色。</p>
+      </div>
+
       <div class="panel">
         <h3>错题本 <span class="badge" id="wrongCount">0</span></h3>
         <div class="wronglist" id="wrongList"></div>
@@ -313,6 +336,8 @@
           <p>选项每次重新随机排序，且不会与原题 ABCD 顺序完全相同；正确答案的位置也随之改变。</p>
           <p>答完立刻显示对错；答错会给出正确答案并标绿。答对的题不会马上重复。</p>
           <p>「整套试卷」把全部题目排成一套卷，提交后给出得分与错题，可导出或复制答题情况；连续答对 2 次记为「已掌握」。</p>
+          <p>「试卷总览」在右侧列出全部题号：答对变绿、答错变红、未答无色，点题号可直接跳到那一题。</p>
+          <p>「逐题闯关」答完后可点「上一题」回看刚才的题和当时的对错，回看不重复计分；键盘 ← 也能返回。</p>
           <p id="ocrNote">原文件若存在 OCR 错漏，已修正明显的错字，题意与答案未改。</p>
         </div>
       </details>
@@ -351,6 +376,7 @@ const META = __META__;
     opts: document.getElementById("opts"),
     fb: document.getElementById("fb"),
     nextBtn: document.getElementById("nextBtn"),
+    prevBtn: document.getElementById("prevBtn"),
     kbdHint: document.getElementById("kbdHint"),
     stAnswered: document.getElementById("stAnswered"),
     stRate: document.getElementById("stRate"),
@@ -374,12 +400,18 @@ const META = __META__;
     paperView: document.getElementById("paperView"),
     paperHead: document.getElementById("paperHead"),
     paperList: document.getElementById("paperList"),
-    paperBar: document.getElementById("paperBar")
+    paperBar: document.getElementById("paperBar"),
+    paperNav: document.getElementById("paperNav"),
+    paperNavPanel: document.getElementById("paperNavPanel"),
+    paperNavDone: document.getElementById("paperNavDone")
   };
 
   var S = load();
   var current = null;   // { q, order, correctDisplay }
   var answered = false;
+  var hist = [];        // 逐题会话历史（回看用，不持久化）
+  var histIdx = -1;
+  var navCur = null;    // 试卷总览里刚点过的题号
 
   /* ---------------- state ---------------- */
   function defaultState() {
@@ -514,14 +546,34 @@ const META = __META__;
     return order;
   }
 
-  function show(id) {
+  function makeEntry(id) {
     var q = BY_ID[id];
-    var r = rec(id);
-    var order = shuffleOrder(q.opts.length, q.ans);
-    current = { q: q, order: order, correctDisplay: order.indexOf(q.ans) };
-    answered = false;
+    return { id: id, order: shuffleOrder(q.opts.length, q.ans), pos: null, ok: null };
+  }
 
-    el.qId.textContent = "原题 " + String(id).padStart(2, "0");
+  function paintPrevNext() {
+    el.prevBtn.hidden = histIdx <= 0;
+    el.nextBtn.hidden = !answered;
+    el.kbdHint.hidden = false;
+    if (answered) {
+      el.kbdHint.textContent = histIdx > 0 ? "← 上一题 · Enter 下一题" : "按 Enter 进入下一题";
+    } else {
+      var n = current ? current.order.length : 4;
+      el.kbdHint.textContent = LETTERS.slice(0, n).join(" / ") + " 或 1–" + n + " 作答" + (histIdx > 0 ? " · ← 可回看上一题" : "");
+    }
+  }
+
+  function renderQuestion(entry) {
+    var q = BY_ID[entry.id];
+    var r = rec(entry.id);
+    var order = entry.order;
+    current = { q: q, order: order, correctDisplay: order.indexOf(q.ans) };
+    answered = entry.pos != null;
+    S.currentId = entry.id;
+    S.currentAnswered = answered;
+    save();
+
+    el.qId.textContent = "原题 " + String(entry.id).padStart(2, "0");
     el.qSeen.hidden = false;
     el.qSeen.textContent = r.seen === 0 ? "首次出现" : "第 " + (r.seen + 1) + " 次出现";
     el.qSeen.classList.toggle("hot", r.wrong > 0);
@@ -532,9 +584,6 @@ const META = __META__;
     el.fb.hidden = true;
     el.fb.className = "fb";
     el.fb.innerHTML = "";
-    el.nextBtn.hidden = true;
-    el.kbdHint.hidden = false;
-    el.kbdHint.textContent = "A / B / C / D 或 1–4 作答";
 
     el.opts.innerHTML = "";
     order.forEach(function (origIdx, pos) {
@@ -554,8 +603,32 @@ const META = __META__;
       el.opts.appendChild(b);
     });
 
+    if (answered) {
+      paintAnswer(entry.pos, entry.ok);
+      paintFeedback(entry.pos, entry.ok, true);
+    }
+
     paintStats();
     paintStatus();
+    paintPrevNext();
+  }
+
+  function show(id) {
+    if (histIdx >= 0 && hist[histIdx].id === id && hist[histIdx].pos == null) {
+      renderQuestion(hist[histIdx]);
+      return;
+    }
+    hist.push(makeEntry(id));
+    histIdx = hist.length - 1;
+    renderQuestion(hist[histIdx]);
+  }
+
+  function startNew() {
+    var id = draw();
+    if (id === null) { showEmpty(); return; }
+    hist.push(makeEntry(id));
+    histIdx = hist.length - 1;
+    renderQuestion(hist[histIdx]);
   }
 
   function showEmpty() {
@@ -568,6 +641,7 @@ const META = __META__;
     el.opts.innerHTML = "";
     el.fb.hidden = true;
     el.nextBtn.hidden = true;
+    el.prevBtn.hidden = true;
     el.kbdHint.hidden = true;
     paintStats();
     paintStatus();
@@ -580,6 +654,7 @@ const META = __META__;
 
     var q = current.q;
     var ok = pos === current.correctDisplay;
+    if (histIdx >= 0 && hist[histIdx].id === q.id) { hist[histIdx].pos = pos; hist[histIdx].ok = ok; }
     var r = rec(q.id);
     r.seen += 1;
     S.stats.answered += 1;
@@ -616,7 +691,7 @@ const META = __META__;
     }
   }
 
-  function paintFeedback(pos, ok) {
+  function paintFeedback(pos, ok, review) {
     var cd = current.correctDisplay;
     var correctText = current.q.opts[current.order[cd]];
     var chosenText = current.q.opts[current.order[pos]];
@@ -639,6 +714,12 @@ const META = __META__;
         ? "连续答对 " + s + " 题，很稳。"
         : "答案就是 " + LETTERS[cd] + ". " + correctText;
       el.fb.appendChild(line);
+      if (review) {
+        var rl = document.createElement("div");
+        rl.className = "fb-line note";
+        rl.textContent = "回看模式：这题已经作答过，不会重复计分。";
+        el.fb.appendChild(rl);
+      }
     } else {
       var l1 = document.createElement("div");
       l1.className = "fb-line";
@@ -655,13 +736,13 @@ const META = __META__;
 
       var l3 = document.createElement("div");
       l3.className = "fb-line note";
-      l3.textContent = "这题会插回队列，1–3 题后再次出现。";
+      l3.textContent = review ? "回看模式：这题已经作答过，不会重复计分。" : "这题会插回队列，1–3 题后再次出现。";
       el.fb.appendChild(l3);
     }
 
     el.nextBtn.hidden = false;
     el.kbdHint.hidden = false;
-    el.kbdHint.textContent = "按 Enter 进入下一题";
+    el.kbdHint.textContent = histIdx > 0 ? "← 上一题 · Enter 下一题" : "按 Enter 进入下一题";
   }
 
   function paintStats() {
@@ -726,10 +807,21 @@ const META = __META__;
 
   /* ---------------- actions ---------------- */
   function next() {
-    if (!current || !S.currentAnswered) return;
-    var id = draw();
-    if (id === null) showEmpty();
-    else show(id);
+    if (!current || !answered) return;
+    if (histIdx < hist.length - 1) {
+      histIdx++;
+      renderQuestion(hist[histIdx]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    startNew();
+  }
+
+  function prev() {
+    if (histIdx <= 0) return;
+    histIdx--;
+    renderQuestion(hist[histIdx]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function toggleMode() {
@@ -741,11 +833,11 @@ const META = __META__;
     S.currentId = null;
     S.currentAnswered = false;
     S.stats.streak = 0;
+    hist = [];
+    histIdx = -1;
     save();
     paintMode();
-    var id = draw();
-    if (id === null) showEmpty();
-    else show(id);
+    startNew();
   }
 
   function reset() {
@@ -758,13 +850,14 @@ const META = __META__;
     paintWrong();
     current = null;
     answered = false;
+    hist = [];
+    histIdx = -1;
+    navCur = null;
     if (S.view === "paper") {
       newPaper("all");
       renderPaper();
     } else {
-      var id = draw();
-      if (id === null) showEmpty();
-      else show(id);
+      startNew();
     }
     paintStats();
   }
@@ -804,6 +897,7 @@ const META = __META__;
   }
 
   function newPaper(kind) {
+    navCur = null;
     var ids = kind === "wrong" ? wrongIds() : BANK.map(function (q) { return q.id; });
     if (!ids.length) return null;
     var paper = { no: (S.paperNo || 0) + 1, kind: kind || "all", ids: weightedOrder(ids), orders: {}, picks: {}, submitted: false, at: null, right: 0, total: ids.length };
@@ -812,6 +906,31 @@ const META = __META__;
     S.paper = paper;
     save();
     return paper;
+  }
+
+  function renderPaperNav() {
+    var paper = S.paper;
+    if (!paper) { el.paperNav.innerHTML = ""; return; }
+    var html = [];
+    paper.ids.forEach(function (id, k) {
+      var pos = paper.picks[id];
+      var cls = "";
+      if (pos != null) cls = paper.orders[id][pos] === BY_ID[id].ans ? " ok" : " bad";
+      if (navCur === id) cls += " cur";
+      html.push('<button type="button" class="' + cls.trim() + '" data-id="' + id + '" title="第 ' + (k + 1) + ' 题 · 原题 ' + id + '">' + (k + 1) + '</button>');
+    });
+    el.paperNav.innerHTML = html.join("");
+    el.paperNavDone.textContent = paperPicked(paper);
+  }
+
+  function jumpToPaperQ(id) {
+    navCur = id;
+    renderPaperNav();
+    var art = el.paperList.querySelector('.pq[data-id="' + id + '"]');
+    if (!art) return;
+    art.scrollIntoView({ behavior: "smooth", block: "start" });
+    art.classList.add("flash");
+    setTimeout(function () { art.classList.remove("flash"); }, 1200);
   }
 
   function paperPicked(paper) {
@@ -896,6 +1015,7 @@ const META = __META__;
       html.push(parts.join(""));
     });
     el.paperList.innerHTML = html.join("");
+    renderPaperNav();
 
     var bar = [];
     if (!submitted) {
@@ -923,6 +1043,7 @@ const META = __META__;
     for (var i = 0; i < btns.length; i++) {
       btns[i].classList.toggle("sel", Number(btns[i].getAttribute("data-pos")) === paper.picks[id]);
     }
+    renderPaperNav();
     var picked = paperPicked(paper);
     var info = el.paperBar.querySelector(".pinfo");
     if (info) {
@@ -1054,17 +1175,21 @@ const META = __META__;
     el.paperView.hidden = !paper;
     el.tabDrill.classList.toggle("on", !paper);
     el.tabPaper.classList.toggle("on", paper);
+    el.paperNavPanel.hidden = !paper;
     if (paper) {
       if (!S.paper) newPaper("all");
       renderPaper();
     } else {
-      if (!current) {
-        if (S.currentId && BY_ID[S.currentId] && !S.currentAnswered) show(S.currentId);
-        else {
-          var id = draw();
-          if (id === null) showEmpty();
-          else show(id);
+      if (!hist.length) {
+        if (S.currentId && BY_ID[S.currentId] && !S.currentAnswered) {
+          hist.push(makeEntry(S.currentId));
+          histIdx = 0;
+          renderQuestion(hist[0]);
+        } else {
+          startNew();
         }
+      } else {
+        renderQuestion(hist[histIdx]);
       }
       paintStats();
       paintStatus();
@@ -1090,6 +1215,7 @@ const META = __META__;
   if (META.source) el.srcName.textContent = META.source;
   if (META.ocrNote === false) el.ocrNote.hidden = true;
   el.nextBtn.addEventListener("click", next);
+  el.prevBtn.addEventListener("click", prev);
   el.modeBtn.addEventListener("click", toggleMode);
   el.resetBtn.addEventListener("click", reset);
   el.tabDrill.addEventListener("click", function () { switchView("drill"); });
@@ -1099,6 +1225,11 @@ const META = __META__;
     var b = e.target.closest(".pqopt");
     if (!b) return;
     pickPaper(Number(b.getAttribute("data-id")), Number(b.getAttribute("data-pos")));
+  });
+
+  el.paperNav.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-id]");
+    if (b) jumpToPaperQ(Number(b.getAttribute("data-id")));
   });
 
   el.paperBar.addEventListener("click", function (e) {
@@ -1119,8 +1250,13 @@ const META = __META__;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (S.view !== "drill") return;
     if (!current) return;
-    // 焦点在「下一题」按钮上时交给按钮原生激活，避免 Enter 触发两次
-    if (e.target === el.nextBtn && (e.key === "Enter" || e.key === " ")) return;
+    // 焦点在翻页按钮上时交给按钮原生激活，避免 Enter 触发两次
+    if ((e.target === el.nextBtn || e.target === el.prevBtn) && (e.key === "Enter" || e.key === " ")) return;
+    if (e.key === "ArrowLeft" && histIdx > 0) {
+      e.preventDefault();
+      prev();
+      return;
+    }
 
     if (!answered) {
       var k = String(e.key || "").toUpperCase();
@@ -1142,18 +1278,8 @@ const META = __META__;
   paintWrong();
   paintStats();
 
-  if (S.view === "paper") {
-    if (!S.paper) newPaper("all");
-    applyView();
-  } else {
-    if (S.currentId && BY_ID[S.currentId] && !S.currentAnswered) show(S.currentId);
-    else {
-      var first = draw();
-      if (first === null) showEmpty();
-      else show(first);
-    }
-    applyView();
-  }
+  if (!S.paper) newPaper("all");
+  applyView();
 })();
 </script>
 </body>

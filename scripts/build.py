@@ -26,10 +26,33 @@ import os
 import re
 import sys
 
+# Windows 控制台常是 GBK，报错信息里可能有题库中的任意字符；统一按 UTF-8 输出，避免“报错时又崩一次”
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 def fail(msg):
     print("ERROR: " + msg)
     sys.exit(1)
+
+
+# 常见乱码/编码错位特征：宁可拦下让用户修，也不要生成一页看不懂的题
+BAD_SEQ = ("\ufffd", "ï¿½", "â€", "Ã", "Â")
+# 含糊表述：不直接报错，但提醒改写成明确选项
+AMBIG = ("以上都", "以下都", "全部正确", "全都对", "以上皆", "都不对")
+
+
+def lint_text(text, where, warnings):
+    for bad in BAD_SEQ:
+        if bad in text:
+            fail(where + " 含乱码字符 “%s”；请把题库另存为 UTF-8 后重试" % bad)
+    for a in AMBIG:
+        if a in text:
+            warnings.append(where + " 含“%s”类表述，容易有歧义，建议改成明确选项" % a)
+            break
 
 
 def sanitize(name):
@@ -68,7 +91,7 @@ def validate(data):
         fail("questions 必须是非空数组")
 
     seen_ids, seen_texts = set(), {}
-    out = []
+    out, warnings = [], []
     for i, q in enumerate(qs):
         where = "第 %d 题" % (i + 1)
         if not isinstance(q, dict):
@@ -85,6 +108,7 @@ def validate(data):
         text = str(q.get("q") or "").strip()
         if not text:
             fail(where + " 题干为空")
+        lint_text(text, where, warnings)
         norm = re.sub(r"\s+", "", text)
         if norm in seen_texts:
             fail("题干重复：#%d 与 #%d 内容相同" % (seen_texts[norm], qid))
@@ -100,6 +124,7 @@ def validate(data):
                 fail(where + " 第 %d 个选项为空" % (j + 1))
             if o in clean:
                 fail(where + " 选项重复：%r" % o)
+            lint_text(o, where + " 第 %d 个选项" % (j + 1), warnings)
             clean.append(o)
 
         ans = q.get("ans")
@@ -112,7 +137,7 @@ def validate(data):
     meta.setdefault("key", slug(title))
     meta.setdefault("fileBase", sanitize(title))
     meta.setdefault("source", "题库文件")
-    return meta, out
+    return meta, out, warnings
 
 
 def main():
@@ -133,7 +158,7 @@ def main():
         if ph not in tpl:
             fail("模板缺少占位符 " + ph)
 
-    meta, questions = validate(load(args.bank))
+    meta, questions, warnings = validate(load(args.bank))
 
     def dumps(obj):
         return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
@@ -153,6 +178,8 @@ def main():
     print("题目 %d 道" % len(questions))
     print("选项数分布: " + ", ".join("%d 项 × %d" % (k, v) for k, v in sorted(lens.items())))
     print("答案分布(仅 4 选项): A%d B%d C%d D%d" % (spread[0], spread[1], spread[2], spread[3]))
+    for w in warnings:
+        print("WARN: " + w)
     print("写出 %s（%.1f KB）" % (out_path, os.path.getsize(out_path) / 1024.0))
 
 

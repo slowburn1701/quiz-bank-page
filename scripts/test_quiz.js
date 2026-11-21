@@ -188,6 +188,12 @@ function ok(cond, msg) {
   ok(struct.every(x => x.texts.length === BY_ID.get(x.id).opts.length), '每题选项数与题库一致');
   const identity = struct.filter(x => x.texts.length >= 3 && x.texts.every((t, i) => t === BY_ID.get(x.id).opts[i]));
   ok(identity.length === 0, '没有一题保持原选项顺序' + (identity.length ? '（相同：' + identity.map(x => x.id).join(',') + '）' : ''));
+  console.log('\n[1b] 试卷总览');
+  ok(!(await evalJS('document.getElementById("paperNavPanel").hidden')), '总览面板随试卷显示');
+  ok((await evalJS('document.querySelectorAll("#paperNav button").length')) === N, '总览题号数 = ' + N);
+  const navTexts = await evalJS('[...document.querySelectorAll("#paperNav button")].map(b => b.textContent)');
+  ok(navTexts.join(',') === Array.from({ length: N }, (_, i) => String(i + 1)).join(','), '题号按 1..N 排列');
+  ok((await evalJS('document.querySelectorAll("#paperNav button.ok, #paperNav button.bad").length')) === 0, '未答时题号无彩色');
   await shot('shot-paper-top.png');
 
   console.log('\n[2] 整套全对 + 刷新保留');
@@ -200,6 +206,12 @@ function ok(cond, msg) {
   v = await viewState();
   ok(v.bar.includes('已答 ' + N + ' / ' + N), '刷新后作答保留');
   ok(/第 1 套/.test(v.head), '刷新后仍是第 1 套');
+  ok((await evalJS('document.querySelectorAll("#paperNav button.ok").length')) === N, '答对题号全部变绿');
+  await evalJS('document.querySelectorAll("#paperNav button")[2].click(); true');
+  await sleep(300);
+  ok((await evalJS('document.querySelectorAll("#paperNav button.cur").length')) === 1 &&
+     (await evalJS('document.querySelectorAll("#paperNav button")[2].classList.contains("cur")')), '点总览题号有高亮');
+  ok((await evalJS('document.querySelectorAll("#paperNav button.ok").length')) === N, '跳转不改变对错颜色');
 
   console.log('\n[3] 提交与计分');
   await evalJS('document.getElementById("submitPaperBtn").click(); true');
@@ -242,6 +254,8 @@ function ok(cond, msg) {
   ok(line.includes((N - 2) + '/' + N), '第 2 套得分 ' + (N - 2) + '/' + N + '：' + line);
   ok(v.wrongN === '2', '错题本 2 题：' + v.wrongN);
   ok((await evalJS('document.querySelectorAll(".pqopt.wrong").length')) === 2, '2 个错选标红');
+  ok((await evalJS('document.querySelectorAll("#paperNav button.bad").length')) === 2, '总览里 2 个题号变红');
+  ok((await evalJS('document.querySelectorAll("#paperNav button.ok").length')) === N - 2, '其余题号保持绿色');
   await shot('shot-paper-wrong.png');
   const before = fs.readdirSync(DL).filter(f => f.endsWith('.txt')).length;
   await evalJS('document.getElementById("exportBtn").click(); true');
@@ -262,7 +276,19 @@ function ok(cond, msg) {
   v = await viewState();
   ok(v.score.replace(/\n/g, ' ').includes('2/2'), '错题重练 2/2');
 
-  console.log('\n[7] 逐题闯关 + 键盘');
+  async function answerDrillCorrect() {
+    const info = await evalJS(`(() => ({
+      q: document.getElementById('qText').textContent,
+      opts: [...document.querySelectorAll('#opts .opt')].map(b => b.querySelector('.otext').textContent.trim())
+    }))()`);
+    const q = BANK.find(x => x.q === info.q);
+    if (!q) return null;
+    const pos = info.opts.findIndex(t => t === q.opts[q.ans]);
+    await evalJS(`document.querySelectorAll('#opts .opt')[${pos}].click(); true`);
+    return q.id;
+  }
+
+  console.log('\n[7] 逐题闯关 + 键盘 + 回看');
   await evalJS('document.getElementById("tabDrill").click(); true');
   await sleep(400);
   v = await viewState();
@@ -283,6 +309,27 @@ function ok(cond, msg) {
     const fb = await evalJS('document.getElementById("fb").hidden ? "" : document.getElementById("fb").innerText');
     ok(/回答正确/.test(fb), '键盘作答判定：' + fb.split('\n')[0]);
   }
+  ok((await evalJS('document.getElementById("prevBtn").hidden')) === true, '第一题时没有上一题');
+  await evalJS('document.getElementById("nextBtn").click(); true');
+  await sleep(300);
+  const secondText = await evalJS('document.getElementById("qText").textContent');
+  await answerDrillCorrect();
+  ok((await evalJS('document.getElementById("prevBtn").hidden')) === false, '第二题答完后出现上一题');
+  const firstText = drill.q;
+  await evalJS('document.getElementById("prevBtn").click(); true');
+  await sleep(300);
+  const back = await evalJS(`(() => ({
+    q: document.getElementById('qText').textContent,
+    fb: document.getElementById('fb').hidden ? '' : document.getElementById('fb').innerText,
+    disabled: document.querySelectorAll('#opts .opt:disabled').length
+  }))()`);
+  ok(back.q === firstText, '上一题回到上一道题');
+  ok(/回看模式/.test(back.fb), '回看显示当时的判题结果');
+  ok(back.disabled > 0, '回看时选项锁定');
+  await evalJS('document.getElementById("nextBtn").click(); true');
+  await sleep(300);
+  ok((await evalJS('document.getElementById("qText").textContent')) === secondText, '下一题回到刚才那题');
+
   await send('Page.reload');
   await sleep(900);
   v = await viewState();
