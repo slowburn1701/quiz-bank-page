@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="离线刷题练习：整套试卷、逐题闯关、选项乱序、错题加频。单文件，双击即用。">
+<title>刷题练习</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f4f1ea'/%3E%3Ccircle cx='19' cy='19' r='12' fill='%23d8422f'/%3E%3Crect x='33' y='7' width='24' height='24' fill='%2323508f'/%3E%3Cpath d='M19 33l12 24H7z' fill='%23f0b429'/%3E%3Ccircle cx='45' cy='45' r='12' fill='none' stroke='%23141414' stroke-width='5'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --paper:#f4f1ea;
+    --card:#fffdf8;
+    --ink:#141414;
+    --muted:#6b6459;
+    --line:#d8d1c4;
+    --red:#d8422f;
+    --blue:#23508f;
+    --yellow:#f0b429;
+    --green:#1e7a4f;
+    --green-bg:#e8f2eb;
+    --red-bg:#fbe9e6;
+    --shadow:8px 8px 0 #141414;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    min-height:100vh;
+    color:var(--ink);
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(0deg, rgba(20,20,20,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20,20,20,.05) 1px, transparent 1px);
+    background-size:100% 32px, 32px 100%;
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC","Source Han Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  button{font-family:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 24px 44px}
+
+  /* ---------- header ---------- */
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:26px;border-bottom:3px solid var(--ink);padding-bottom:20px}
+  .brand{display:flex;align-items:center;gap:18px;min-width:0}
+  .mark{width:56px;height:56px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;flex:0 0 auto}
+  .mark i{display:block}
+  .m1{background:var(--red);border-radius:50%}
+  .m2{background:var(--blue)}
+  .m3{background:var(--yellow);clip-path:polygon(50% 0,100% 100%,0 100%)}
+  .m4{background:var(--paper);border:6px solid var(--ink);border-radius:50%}
+  h1{font-size:27px;line-height:1.25;margin:0 0 6px;letter-spacing:.5px;font-weight:800}
+  .sub{margin:0;font-size:12.5px;letter-spacing:.4px;color:var(--muted)}
+  .score{display:flex;gap:26px;flex:0 0 auto}
+  .score div{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+  .num{font-size:27px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+  .lab{font-size:10.5px;letter-spacing:2px;color:var(--muted)}
+
+  /* ---------- layout ---------- */
+  main{display:grid;grid-template-columns:minmax(0,1fr) 302px;gap:30px;align-items:start;margin-top:24px}
+  .play{min-width:0}
+  .statusline{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+  .meter{flex:1;height:10px;border:2px solid var(--ink);background:#fff;overflow:hidden}
+  .meter i{display:block;height:100%;width:0;background:var(--ink);transition:width .28s ease}
+  .statusmeta{display:flex;gap:18px;font-size:12px;color:var(--muted);white-space:nowrap;letter-spacing:.3px}
+  .statusmeta b{color:var(--ink);font-weight:700}
+
+  /* ---------- question card ---------- */
+  .card{position:relative;background:var(--card);border:2px solid var(--ink);box-shadow:var(--shadow);padding:26px 28px 22px}
+  .card::after{content:"";position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:var(--red);border-left:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+  .qmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1.5px solid var(--ink);font-size:12px;letter-spacing:.5px;background:var(--paper);font-weight:700}
+  .chip.ghost{background:transparent;color:var(--muted);border-color:var(--line);font-weight:600}
+  .chip.hot{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+  .qtext{font-size:23px;line-height:1.62;margin:18px 0 24px;font-weight:800;letter-spacing:.2px}
+  .opts{display:grid;gap:12px}
+  .opt{
+    display:flex;align-items:flex-start;gap:14px;width:100%;text-align:left;
+    padding:14px 16px;background:var(--card);border:2px solid var(--ink);
+    cursor:pointer;font-size:16.5px;line-height:1.55;color:var(--ink);
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .opt .letter{
+    width:31px;height:31px;flex:0 0 31px;display:grid;place-items:center;
+    border:2px solid var(--ink);background:var(--paper);
+    font-size:13px;font-weight:800;line-height:1;margin-top:1px;
+  }
+  .opt .otext{flex:1;padding-top:1px}
+  .opt:hover:not(:disabled){transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink);background:#fff}
+  .opt:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+  .opt:disabled{cursor:default}
+  .opt.correct{background:var(--green-bg);border-color:var(--green)}
+  .opt.correct .letter{background:var(--green);border-color:var(--green);color:#fff}
+  .opt.wrong{background:var(--red-bg);border-color:var(--red)}
+  .opt.wrong .letter{background:var(--red);border-color:var(--red);color:#fff}
+  .opt.dim{opacity:.52}
+  .opt.dim .letter{opacity:.8}
+
+  .fb{margin-top:20px;padding:14px 16px;border:2px solid var(--green);border-left-width:8px;background:var(--green-bg);animation:pop .18s ease-out}
+  .fb.bad{border-color:var(--red);background:var(--red-bg)}
+  .fb-title{font-size:16px;font-weight:800;margin-bottom:5px;letter-spacing:.3px}
+  .fb-line{font-size:14px;line-height:1.75}
+  .fb-line b{font-weight:800}
+  .fb-line.note{color:var(--muted);font-size:12.5px;margin-top:2px}
+  @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px;min-height:46px}
+  .kbdhint{font-size:12px;color:var(--muted);letter-spacing:.3px}
+  .btn{
+    font:inherit;font-weight:800;font-size:14px;letter-spacing:.5px;
+    border:2px solid var(--ink);background:var(--paper);color:var(--ink);
+    padding:11px 20px;cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .btn:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink)}
+  .btn:active{transform:none;box-shadow:none}
+  .btn:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+  .btn.primary{background:var(--ink);color:#fff;box-shadow:4px 4px 0 var(--yellow)}
+  .btn.primary:hover{box-shadow:6px 6px 0 var(--yellow)}
+  .btn.wide{display:block;width:100%;text-align:left;margin-bottom:10px;padding:11px 14px}
+  .btn.on{background:var(--blue);color:#fff;border-color:var(--ink)}
+  .kbd{display:inline-block;border:1px solid currentColor;padding:1px 6px;font-size:10.5px;border-radius:2px;opacity:.65;margin-left:8px;vertical-align:1px;font-weight:700}
+  .under{margin:14px 2px 0;font-size:12px;color:var(--muted);line-height:1.7}
+
+  /* ---------- side ---------- */
+  .side{display:flex;flex-direction:column;gap:18px}
+  .panel{background:var(--card);border:2px solid var(--ink);padding:18px 18px 16px}
+  .panel h3{margin:0 0 12px;font-size:13px;letter-spacing:1.6px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .panel summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between}
+  .panel summary::-webkit-details-marker{display:none}
+  .panel summary h3{margin:0}
+  .panel summary::after{content:"＋";font-weight:800;font-size:14px}
+  .panel[open] summary::after{content:"－"}
+  details.panel{padding-bottom:16px}
+  details.panel .doc{margin-top:12px}
+  .badge{display:inline-grid;place-items:center;min-width:22px;height:19px;padding:0 6px;background:var(--red);color:#fff;font-size:11.5px;font-weight:800;border-radius:99px;line-height:1}
+  .mininote{margin:8px 0 0;font-size:11.5px;color:var(--muted);line-height:1.6}
+  .wronglist{max-height:340px;overflow:auto;font-size:13px;line-height:1.55}
+  .wronglist .empty{color:var(--muted);font-size:12.5px;line-height:1.7}
+  .witem{padding:10px 0;border-top:1px dashed #cbc4b6}
+  .witem:first-child{border-top:0;padding-top:2px}
+  .wq{font-weight:700}
+  .wmeta{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .wa{color:var(--green);margin-top:5px;font-size:12.5px;line-height:1.6}
+  .doc p{margin:0 0 9px;font-size:12.5px;line-height:1.8;color:var(--muted)}
+  .doc p b{color:var(--ink)}
+
+  footer{margin-top:38px;border-top:2px solid var(--ink);padding-top:14px;display:flex;justify-content:space-between;gap:16px;font-size:11.5px;color:var(--muted);letter-spacing:.4px}
+  footer .shapes{flex:0 0 auto;letter-spacing:3px}
+  footer .dot{display:inline-block;width:8px;height:8px;margin-left:4px;vertical-align:0}
+  .dot.r{background:var(--red);border-radius:50%}
+  .dot.b{background:var(--blue)}
+  .dot.y{background:var(--yellow);border-radius:50%}
+
+
+  /* ---------- view tabs ---------- */
+  .viewtabs{display:flex;border:2px solid var(--ink);background:var(--card);width:max-content;margin-bottom:16px}
+  .tab{font:inherit;font-weight:800;font-size:13px;letter-spacing:1.5px;padding:10px 22px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+  .tab + .tab{border-left:2px solid var(--ink)}
+  .tab.on{background:var(--ink);color:#fff}
+  .tab:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+  /* ---------- paper mode ---------- */
+  .paperhead{background:var(--card);border:2px solid var(--ink);box-shadow:var(--shadow);padding:22px 26px;margin-bottom:18px}
+  .phtop{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .phtop h2{margin:0;font-size:21px;letter-spacing:.3px;font-weight:800}
+  .phsub{margin:10px 0 0;font-size:12.5px;line-height:1.75;color:var(--muted)}
+  .scorebox{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+  .scorebox div{border:2px solid var(--ink);background:var(--paper);padding:8px 16px;min-width:96px}
+  .scorebox b{display:block;font-size:23px;line-height:1.2;font-variant-numeric:tabular-nums}
+  .scorebox span{font-size:10.5px;letter-spacing:2px;color:var(--muted)}
+  .pq{background:var(--card);border:2px solid var(--ink);padding:18px 20px 16px;margin-bottom:14px}
+  .pqhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .pqno{background:var(--ink);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:1px;padding:3px 9px}
+  .pqtext{margin:0 0 12px;font-size:16.5px;line-height:1.62;font-weight:700;letter-spacing:.2px}
+  .pqopts{display:grid;gap:8px}
+  .pqopt{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;font:inherit;font-size:14.5px;line-height:1.55;color:var(--ink);background:var(--card);border:1.5px solid var(--line);padding:9px 12px;cursor:pointer;transition:border-color .12s ease,background .12s ease}
+  .pqopt .pl{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border:1.5px solid var(--ink);background:var(--paper);font-size:11.5px;font-weight:800;margin-top:1px}
+  .pqopt:hover:not(:disabled){border-color:var(--ink);background:#fff}
+  .pqopt:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+  .pqopt.sel{border-color:var(--blue);background:#e9f0f9}
+  .pqopt.sel .pl{background:var(--blue);border-color:var(--blue);color:#fff}
+  .pqopt.correct{border-color:var(--green);background:var(--green-bg)}
+  .pqopt.correct .pl{background:var(--green);border-color:var(--green);color:#fff}
+  .pqopt.wrong{border-color:var(--red);background:var(--red-bg)}
+  .pqopt.wrong .pl{background:var(--red);border-color:var(--red);color:#fff}
+  .pqopt:disabled{cursor:default}
+  .pqans{margin-top:10px;font-size:12.5px;color:var(--muted);line-height:1.7}
+  .pqans b{color:var(--green);font-weight:800}
+  #paperView{padding-bottom:126px}
+  .paperbar{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:1180px;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--paper);border:2px solid var(--ink);border-bottom:0;box-shadow:0 -4px 0 rgba(20,20,20,.08);padding:12px 18px}
+  .pinfo{font-size:13px;color:var(--muted)}
+  .pinfo b{color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums}
+  .paperbar .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn.small{padding:8px 14px;font-size:12.5px;box-shadow:none}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;font-size:13px;font-weight:700;padding:11px 18px;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--yellow);transition:opacity .18s ease,transform .18s ease;z-index:99}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width: 940px){
+    .paperhead{padding:18px 18px;box-shadow:5px 5px 0 #141414}
+    .pq{padding:14px 14px 12px}
+    .pqtext{font-size:15px}
+    .phtop h2{font-size:18px}
+    .scorebox{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .scorebox div{min-width:0}
+    #paperView{padding-bottom:168px}
+    .paperbar{padding:10px 14px}
+    .paperbar .actions{width:100%}
+    .paperbar .actions .btn{flex:1 1 auto}
+    .tab{padding:9px 14px;font-size:12px}
+  }
+  @media print{
+    .side,.viewtabs,.statusline,footer,.paperbar,.under,.top .score{display:none !important}
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    main{display:block;margin:0}
+    .paperhead,.pq{box-shadow:none;break-inside:avoid}
+  }
+  @media (max-width: 940px){
+    .wrap{padding:20px 16px 34px}
+    .top{flex-direction:column;gap:16px}
+    .score{width:100%;justify-content:space-between;gap:10px}
+    .score div{align-items:flex-start}
+    main{grid-template-columns:1fr;gap:22px}
+    .card{padding:20px 18px 18px;box-shadow:5px 5px 0 #141414}
+    .qtext{font-size:19.5px;margin:14px 0 18px}
+    .opt{font-size:15.5px;padding:12px 13px}
+    h1{font-size:22px}
+    .mark{width:46px;height:46px}
+    .statusmeta{gap:10px;font-size:11px;flex-wrap:wrap;justify-content:flex-end}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i><i class="m4"></i></div>
+      <div class="titles">
+        <h1 id="examTitle">刷题练习</h1>
+        <p class="sub">题库 <b id="bankCount">0</b> 题 · 整套试卷 / 逐题闯关 · 选项随机打乱 · 错题自动加频</p>
+      </div>
+    </div>
+    <div class="score" aria-label="答题统计">
+      <div><span class="num" id="stAnswered">0</span><span class="lab">已答</span></div>
+      <div><span class="num" id="stRate">—</span><span class="lab">正确率</span></div>
+      <div><span class="num" id="stWrong">0</span><span class="lab">错题</span></div>
+      <div><span class="num" id="stStreak">0</span><span class="lab">连对</span></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="play">
+      <div class="viewtabs" role="tablist" aria-label="练习方式">
+        <button class="tab on" id="tabDrill" type="button" role="tab">逐题闯关</button>
+        <button class="tab" id="tabPaper" type="button" role="tab">整套试卷</button>
+      </div>
+
+      <div id="drillView">
+        <div class="statusline">
+          <div class="meter"><i id="meterFill"></i></div>
+          <div class="statusmeta">
+            <span id="cycleInfo">第 1 轮 · 0/0</span>
+            <span>总覆盖 <b id="coverageInfo">0/0</b></span>
+          </div>
+        </div>
+
+        <article class="card">
+          <div class="qmeta">
+            <span class="chip" id="qId">原题 01</span>
+            <span class="chip ghost" id="qSeen">首次出现</span>
+            <span class="chip hot" id="qMode" hidden>错题重练</span>
+          </div>
+          <h2 class="qtext" id="qText"></h2>
+          <div class="opts" id="opts"></div>
+          <div class="fb" id="fb" role="status" aria-live="polite" hidden></div>
+          <div class="foot">
+            <button class="btn primary" id="nextBtn" type="button" hidden>下一题<span class="kbd">Enter</span></button>
+            <span class="kbdhint" id="kbdHint">A / B / C / D 或 1–4 作答</span>
+          </div>
+        </article>
+
+        <p class="under">每轮把 <b id="underCount">0</b> 题各抽一次，保证全部覆盖；答错的题会在 1–3 题内插回队列，下一轮也会更早出现。</p>
+      </div>
+
+      <section id="paperView" hidden>
+        <div id="paperHead"></div>
+        <div id="paperList"></div>
+        <div id="paperBar" class="paperbar"></div>
+      </section>
+    </section>
+
+    <aside class="side">
+      <div class="panel">
+        <h3>练习设置</h3>
+        <button class="btn wide" id="modeBtn" type="button">只练错题 →</button>
+        <button class="btn wide" id="resetBtn" type="button">重置全部记录</button>
+        <p class="mininote">进度自动保存在本机浏览器；换电脑或清缓存会从零开始。</p>
+      </div>
+
+      <div class="panel">
+        <h3>错题本 <span class="badge" id="wrongCount">0</span></h3>
+        <div class="wronglist" id="wrongList"></div>
+      </div>
+
+      <details class="panel">
+        <summary><h3>说明</h3></summary>
+        <div class="doc">
+          <p>题库共 <b id="bankCount2">0</b> 题，全部来自 <span id="srcName">题库文件</span>，没有增删或改编题目。</p>
+          <p>抽题规则：每轮把全部题目各抽一次，保证不遗漏；答错的题会插回队列（1–3 题后重现），并且下一轮优先出现，所以错题被问到的频次更高。</p>
+          <p>选项每次重新随机排序，且不会与原题 ABCD 顺序完全相同；正确答案的位置也随之改变。</p>
+          <p>答完立刻显示对错；答错会给出正确答案并标绿。答对的题不会马上重复。</p>
+          <p>「整套试卷」把全部题目排成一套卷，提交后给出得分与错题，可导出或复制答题情况；连续答对 2 次记为「已掌握」。</p>
+          <p id="ocrNote">原文件若存在 OCR 错漏，已修正明显的错字，题意与答案未改。</p>
+        </div>
+      </details>
+    </aside>
+  </main>
+
+  <footer>
+    <span>已生成单文件网页：双击即可离线打开，手机浏览器同样可用。</span>
+    <span class="shapes" aria-hidden="true"><i class="dot r"></i><i class="dot b"></i><i class="dot y"></i></span>
+  </footer>
+</div>
+
+<script>
+const BANK = __BANK__;
+const META = __META__;
+</script>
+<script>
+(function () {
+  "use strict";
+
+  var LETTERS = (function () {
+    var n = 2;
+    BANK.forEach(function (q) { if (q.opts.length > n) n = q.opts.length; });
+    return "ABCDEFGH".slice(0, Math.min(8, Math.max(2, n))).split("");
+  })();
+  var KEY = "quizbank_v1:" + (META.key || "default");
+  var TOTAL = BANK.length;
+  var BY_ID = {};
+  BANK.forEach(function (q) { BY_ID[q.id] = q; });
+
+  var el = {
+    qId: document.getElementById("qId"),
+    qSeen: document.getElementById("qSeen"),
+    qMode: document.getElementById("qMode"),
+    qText: document.getElementById("qText"),
+    opts: document.getElementById("opts"),
+    fb: document.getElementById("fb"),
+    nextBtn: document.getElementById("nextBtn"),
+    kbdHint: document.getElementById("kbdHint"),
+    stAnswered: document.getElementById("stAnswered"),
+    stRate: document.getElementById("stRate"),
+    stWrong: document.getElementById("stWrong"),
+    stStreak: document.getElementById("stStreak"),
+    cycleInfo: document.getElementById("cycleInfo"),
+    coverageInfo: document.getElementById("coverageInfo"),
+    meterFill: document.getElementById("meterFill"),
+    wrongList: document.getElementById("wrongList"),
+    wrongCount: document.getElementById("wrongCount"),
+    modeBtn: document.getElementById("modeBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+    bankCount: document.getElementById("bankCount"),
+    bankCount2: document.getElementById("bankCount2"),
+    examTitle: document.getElementById("examTitle"),
+    srcName: document.getElementById("srcName"),
+    underCount: document.getElementById("underCount"),
+    tabDrill: document.getElementById("tabDrill"),
+    tabPaper: document.getElementById("tabPaper"),
+    drillView: document.getElementById("drillView"),
+    paperView: document.getElementById("paperView"),
+    paperHead: document.getElementById("paperHead"),
+    paperList: document.getElementById("paperList"),
+    paperBar: document.getElementById("paperBar")
+  };
+
+  var S = load();
+  var current = null;   // { q, order, correctDisplay }
+  var answered = false;
+
+  /* ---------------- state ---------------- */
+  function defaultState() {
+    return {
+      v: 1,
+      mode: "all",
+      stats: { answered: 0, correct: 0, streak: 0, best: 0 },
+      rec: {},
+      queue: [],
+      cycle: 0,
+      cycleSeen: [],
+      cycleTotal: 0,
+      currentId: null,
+      currentAnswered: false,
+      lastAsked: null,
+      view: "paper",
+      paperNo: 0,
+      paper: null
+    };
+  }
+
+  function load() {
+    var base = defaultState();
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return base;
+      var d = JSON.parse(raw);
+      if (!d || d.v !== 1) return base;
+      base.mode = d.mode === "wrong" ? "wrong" : "all";
+      if (d.stats) {
+        base.stats.answered = d.stats.answered || 0;
+        base.stats.correct = d.stats.correct || 0;
+        base.stats.streak = d.stats.streak || 0;
+        base.stats.best = d.stats.best || 0;
+      }
+      base.rec = d.rec && typeof d.rec === "object" ? d.rec : {};
+      base.queue = Array.isArray(d.queue) ? d.queue.filter(function (id) { return !!BY_ID[id]; }) : [];
+      base.cycle = d.cycle || 0;
+      base.cycleSeen = Array.isArray(d.cycleSeen) ? d.cycleSeen.filter(function (id) { return !!BY_ID[id]; }) : [];
+      base.cycleTotal = d.cycleTotal || 0;
+      base.currentId = d.currentId && BY_ID[d.currentId] ? d.currentId : null;
+      base.currentAnswered = !!d.currentAnswered;
+      base.lastAsked = d.lastAsked && BY_ID[d.lastAsked] ? d.lastAsked : null;
+      base.view = d.view === "drill" ? "drill" : "paper";
+      base.paperNo = d.paperNo || 0;
+      base.paper = normalizePaper(d.paper);
+      return base;
+    } catch (e) {
+      return base;
+    }
+  }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* private mode etc. */ }
+  }
+
+  function rec(id) {
+    if (!S.rec[id]) S.rec[id] = { seen: 0, right: 0, wrong: 0, streak: 0 };
+    return S.rec[id];
+  }
+
+  /* ---------------- draw / weighting ---------------- */
+  function weight(id) {
+    var r = rec(id);
+    // 错得越多权重越高；已经答对的会略微降温，但不会归零
+    var w = (1 + 2.6 * r.wrong) / (1 + 0.45 * Math.min(r.right, 4));
+    if (r.wrong > 0 && r.streak === 0) w += 0.8;
+    return Math.max(0.4, w);
+  }
+
+  function weightedOrder(ids) {
+    return ids.map(function (id) {
+      return { id: id, k: Math.pow(Math.random() + 1e-9, 1 / weight(id)) };
+    }).sort(function (a, b) { return b.k - a.k; }).map(function (o) { return o.id; });
+  }
+
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function wrongIds() {
+    return BANK.filter(function (q) { return rec(q.id).wrong > 0; }).map(function (q) { return q.id; });
+  }
+
+  function newCycle() {
+    var ids = S.mode === "wrong" ? wrongIds() : BANK.map(function (q) { return q.id; });
+    S.cycle += 1;
+    S.cycleSeen = [];
+    S.cycleTotal = ids.length;
+    S.queue = weightedOrder(ids);
+    if (S.queue.length > 1 && S.queue[0] === S.lastAsked) {
+      S.queue.push(S.queue.shift());
+    }
+    save();
+  }
+
+  function draw() {
+    if (!S.queue.length) {
+      newCycle();
+      if (!S.queue.length) return null;
+    }
+    var id = S.queue.shift();
+    S.currentId = id;
+    S.currentAnswered = false;
+    S.lastAsked = id;
+    if (S.cycleSeen.indexOf(id) === -1) S.cycleSeen.push(id);
+    save();
+    return id;
+  }
+
+  function scheduleRetry(id) {
+    var already = S.queue.filter(function (x) { return x === id; }).length;
+    if (already >= 1) return;
+    var pos = 1 + Math.floor(Math.random() * 3);
+    S.queue.splice(Math.min(pos, S.queue.length), 0, id);
+  }
+
+  /* ---------------- render ---------------- */
+  function shuffleOrder(n, ansIdx) {
+    var base = [];
+    for (var i = 0; i < n; i++) base.push(i);
+    var order;
+    var tries = 0;
+    do {
+      order = shuffle(base.slice());
+      tries++;
+    } while (n > 1 && order.every(function (v, i) { return v === i; }) && tries < 40);
+    return order;
+  }
+
+  function show(id) {
+    var q = BY_ID[id];
+    var r = rec(id);
+    var order = shuffleOrder(q.opts.length, q.ans);
+    current = { q: q, order: order, correctDisplay: order.indexOf(q.ans) };
+    answered = false;
+
+    el.qId.textContent = "原题 " + String(id).padStart(2, "0");
+    el.qSeen.hidden = false;
+    el.qSeen.textContent = r.seen === 0 ? "首次出现" : "第 " + (r.seen + 1) + " 次出现";
+    el.qSeen.classList.toggle("hot", r.wrong > 0);
+    if (r.wrong > 0) el.qSeen.textContent += " · 错过 " + r.wrong + " 次";
+    el.qMode.hidden = S.mode !== "wrong";
+
+    el.qText.textContent = q.q;
+    el.fb.hidden = true;
+    el.fb.className = "fb";
+    el.fb.innerHTML = "";
+    el.nextBtn.hidden = true;
+    el.kbdHint.hidden = false;
+    el.kbdHint.textContent = "A / B / C / D 或 1–4 作答";
+
+    el.opts.innerHTML = "";
+    order.forEach(function (origIdx, pos) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "opt";
+      b.dataset.pos = String(pos);
+      var letter = document.createElement("span");
+      letter.className = "letter";
+      letter.textContent = LETTERS[pos];
+      var txt = document.createElement("span");
+      txt.className = "otext";
+      txt.textContent = q.opts[origIdx];
+      b.appendChild(letter);
+      b.appendChild(txt);
+      b.addEventListener("click", function () { choose(pos); });
+      el.opts.appendChild(b);
+    });
+
+    paintStats();
+    paintStatus();
+  }
+
+  function showEmpty() {
+    current = null;
+    answered = true;
+    el.qId.textContent = "错题本";
+    el.qSeen.hidden = true;
+    el.qMode.hidden = true;
+    el.qText.textContent = "错题本还是空的。先切回「全部题目」做几题，答错的题会自动收进来。";
+    el.opts.innerHTML = "";
+    el.fb.hidden = true;
+    el.nextBtn.hidden = true;
+    el.kbdHint.hidden = true;
+    paintStats();
+    paintStatus();
+  }
+
+  function choose(pos) {
+    if (answered || !current) return;
+    answered = true;
+    S.currentAnswered = true;
+
+    var q = current.q;
+    var ok = pos === current.correctDisplay;
+    var r = rec(q.id);
+    r.seen += 1;
+    S.stats.answered += 1;
+
+    if (ok) {
+      r.right += 1;
+      r.streak += 1;
+      S.stats.correct += 1;
+      S.stats.streak += 1;
+      if (S.stats.streak > S.stats.best) S.stats.best = S.stats.streak;
+    } else {
+      r.wrong += 1;
+      r.streak = 0;
+      S.stats.streak = 0;
+      scheduleRetry(q.id);
+    }
+
+    save();
+    paintAnswer(pos, ok);
+    paintFeedback(pos, ok);
+    paintStats();
+    paintStatus();
+    paintWrong();
+  }
+
+  function paintAnswer(pos, ok) {
+    var btns = el.opts.querySelectorAll(".opt");
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      b.disabled = true;
+      if (i === current.correctDisplay) b.classList.add("correct");
+      else if (i === pos) b.classList.add("wrong");
+      else b.classList.add("dim");
+    }
+  }
+
+  function paintFeedback(pos, ok) {
+    var cd = current.correctDisplay;
+    var correctText = current.q.opts[current.order[cd]];
+    var chosenText = current.q.opts[current.order[pos]];
+    var r = rec(current.q.id);
+
+    el.fb.hidden = false;
+    el.fb.className = "fb" + (ok ? "" : " bad");
+    el.fb.innerHTML = "";
+
+    var title = document.createElement("div");
+    title.className = "fb-title";
+    title.textContent = ok ? "回答正确" : "回答错误";
+    el.fb.appendChild(title);
+
+    if (ok) {
+      var line = document.createElement("div");
+      line.className = "fb-line";
+      var s = r.streak;
+      line.textContent = s >= 3
+        ? "连续答对 " + s + " 题，很稳。"
+        : "答案就是 " + LETTERS[cd] + ". " + correctText;
+      el.fb.appendChild(line);
+    } else {
+      var l1 = document.createElement("div");
+      l1.className = "fb-line";
+      l1.appendChild(document.createTextNode("正确答案："));
+      var b = document.createElement("b");
+      b.textContent = LETTERS[cd] + ". " + correctText;
+      l1.appendChild(b);
+      el.fb.appendChild(l1);
+
+      var l2 = document.createElement("div");
+      l2.className = "fb-line";
+      l2.textContent = "你选择了：" + LETTERS[pos] + ". " + chosenText;
+      el.fb.appendChild(l2);
+
+      var l3 = document.createElement("div");
+      l3.className = "fb-line note";
+      l3.textContent = "这题会插回队列，1–3 题后再次出现。";
+      el.fb.appendChild(l3);
+    }
+
+    el.nextBtn.hidden = false;
+    el.kbdHint.hidden = false;
+    el.kbdHint.textContent = "按 Enter 进入下一题";
+  }
+
+  function paintStats() {
+    var st = S.stats;
+    el.stAnswered.textContent = st.answered;
+    el.stRate.textContent = st.answered ? Math.round(st.correct / st.answered * 100) + "%" : "—";
+    el.stWrong.textContent = wrongIds().length;
+    el.stStreak.textContent = st.streak;
+  }
+
+  function paintStatus() {
+    var seen = BANK.filter(function (q) { return rec(q.id).seen > 0; }).length;
+    var total = S.cycleTotal || TOTAL;
+    var done = S.cycleSeen.length;
+    el.cycleInfo.textContent = "第 " + Math.max(1, S.cycle) + " 轮 · " + done + "/" + total;
+    el.coverageInfo.textContent = seen + "/" + TOTAL;
+    el.meterFill.style.width = (total ? Math.min(100, done / total * 100) : 0) + "%";
+  }
+
+  function paintWrong() {
+    var list = BANK.filter(function (q) { return rec(q.id).wrong > 0; })
+      .sort(function (a, b) { return rec(b.id).wrong - rec(a.id).wrong || a.id - b.id; });
+    el.wrongCount.textContent = list.length;
+    el.wrongList.innerHTML = "";
+
+    if (!list.length) {
+      var p = document.createElement("div");
+      p.className = "empty";
+      p.textContent = "还没有错题。答错的题会自动出现在这里，并按错误次数排序。";
+      el.wrongList.appendChild(p);
+      return;
+    }
+
+    list.forEach(function (q) {
+      var r = rec(q.id);
+      var item = document.createElement("div");
+      item.className = "witem";
+
+      var t = document.createElement("div");
+      t.className = "wq";
+      t.textContent = "原题 " + q.id + " · " + q.q;
+      item.appendChild(t);
+
+      var m = document.createElement("div");
+      m.className = "wmeta";
+      m.textContent = "错过 " + r.wrong + " 次 · 答对 " + r.right + " 次";
+      item.appendChild(m);
+
+      var a = document.createElement("div");
+      a.className = "wa";
+      a.textContent = "正确答案：" + q.opts[q.ans];
+      item.appendChild(a);
+
+      el.wrongList.appendChild(item);
+    });
+  }
+
+  function paintMode() {
+    el.modeBtn.textContent = S.mode === "wrong" ? "← 回到全部题目" : "只练错题 →";
+    el.modeBtn.classList.toggle("on", S.mode === "wrong");
+  }
+
+  /* ---------------- actions ---------------- */
+  function next() {
+    if (!current || !S.currentAnswered) return;
+    var id = draw();
+    if (id === null) showEmpty();
+    else show(id);
+  }
+
+  function toggleMode() {
+    S.mode = S.mode === "wrong" ? "all" : "wrong";
+    S.queue = [];
+    S.cycle = 0;
+    S.cycleSeen = [];
+    S.cycleTotal = 0;
+    S.currentId = null;
+    S.currentAnswered = false;
+    S.stats.streak = 0;
+    save();
+    paintMode();
+    var id = draw();
+    if (id === null) showEmpty();
+    else show(id);
+  }
+
+  function reset() {
+    if (!window.confirm("确定清空所有答题记录（已答、正确率、错题本、试卷）吗？")) return;
+    var view = S.view;
+    S = defaultState();
+    S.view = view;
+    save();
+    paintMode();
+    paintWrong();
+    current = null;
+    answered = false;
+    if (S.view === "paper") {
+      newPaper("all");
+      renderPaper();
+    } else {
+      var id = draw();
+      if (id === null) showEmpty();
+      else show(id);
+    }
+    paintStats();
+  }
+
+
+  /* ---------------- 整套试卷 ---------------- */
+  function masteredIds() {
+    return BANK.filter(function (q) { return rec(q.id).streak >= 2; }).map(function (q) { return q.id; });
+  }
+
+  function defaultOrder(id) {
+    return shuffleOrder(BY_ID[id].opts.length, BY_ID[id].ans);
+  }
+
+  function normalizePaper(p) {
+    if (!p || !Array.isArray(p.ids)) return null;
+    var ids = [];
+    p.ids.forEach(function (id) {
+      id = Number(id);
+      if (BY_ID[id] && ids.indexOf(id) === -1) ids.push(id);
+    });
+    if (!ids.length) return null;
+    var orders = {}, picks = {};
+    ids.forEach(function (id) {
+      var o = p.orders && p.orders[id];
+      orders[id] = (Array.isArray(o) && o.length === BY_ID[id].opts.length) ? o : defaultOrder(id);
+      var pk = p.picks && p.picks[id];
+      picks[id] = (typeof pk === "number" && pk >= 0 && pk < orders[id].length) ? pk : null;
+    });
+    return {
+      no: p.no || 1,
+      kind: p.kind === "wrong" ? "wrong" : "all",
+      ids: ids, orders: orders, picks: picks,
+      submitted: !!p.submitted, at: p.at || null,
+      right: p.right || 0, total: ids.length
+    };
+  }
+
+  function newPaper(kind) {
+    var ids = kind === "wrong" ? wrongIds() : BANK.map(function (q) { return q.id; });
+    if (!ids.length) return null;
+    var paper = { no: (S.paperNo || 0) + 1, kind: kind || "all", ids: weightedOrder(ids), orders: {}, picks: {}, submitted: false, at: null, right: 0, total: ids.length };
+    paper.ids.forEach(function (id) { paper.orders[id] = defaultOrder(id); });
+    S.paperNo = paper.no;
+    S.paper = paper;
+    save();
+    return paper;
+  }
+
+  function paperPicked(paper) {
+    return paper.ids.filter(function (id) { return paper.picks[id] != null; }).length;
+  }
+
+  function paperScore(paper) {
+    var right = 0;
+    paper.ids.forEach(function (id) {
+      var ch = paper.picks[id];
+      if (ch != null && paper.orders[id][ch] === BY_ID[id].ans) right++;
+    });
+    return right;
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  function fmtTime(d) {
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+
+  function renderPaper() {
+    var paper = S.paper;
+    if (!paper) paper = newPaper("all");
+    if (!paper) return;
+
+    var submitted = !!paper.submitted;
+    var total = paper.ids.length;
+    var picked = paperPicked(paper);
+    var right = submitted ? paper.right : paperScore(paper);
+    var kindLabel = paper.kind === "wrong" ? "错题专练" : "全题库";
+
+    var head = [];
+    head.push('<div class="phtop"><h2>第 ' + paper.no + ' 套 · ' + kindLabel + ' · ' + total + ' 题</h2><span class="chip ghost">选项乱序</span></div>');
+    if (!submitted) {
+      head.push('<p class="phsub">点选项作答，可随时改动。全部做完后点下方「提交试卷」，立刻看到得分和错题。提交后可导出/复制答题情况交给 AI，安排下一轮；错题也会进入错题本，在逐题闯关里被更频繁地问到。</p>');
+    } else {
+      head.push('<div class="scorebox">' +
+        '<div><b>' + right + '/' + total + '</b><span>得分</span></div>' +
+        '<div><b>' + Math.round(right / total * 100) + '%</b><span>正确率</span></div>' +
+        '<div><b>' + (total - right) + '</b><span>错题</span></div>' +
+        '<div><b>' + masteredIds().length + '/' + TOTAL + '</b><span>已掌握</span></div>' +
+        '</div>');
+      head.push('<p class="phsub">提交时间：' + esc(paper.at || "") + '。错题已记入错题本；连续答对 2 次记为「已掌握」。</p>');
+    }
+    el.paperHead.innerHTML = head.join("");
+
+    var html = [];
+    paper.ids.forEach(function (id, k) {
+      var q = BY_ID[id];
+      var r = rec(id);
+      var order = paper.orders[id];
+      var pos = paper.picks[id];
+      var parts = [];
+      parts.push('<article class="pq" data-id="' + id + '">');
+      parts.push('<div class="pqhead"><span class="pqno">第 ' + (k + 1) + ' 题</span><span class="chip ghost">原题 ' + id + '</span>');
+      if (r.wrong > 0) parts.push('<span class="chip hot">错过 ' + r.wrong + ' 次</span>');
+      parts.push('</div>');
+      parts.push('<p class="pqtext">' + esc(q.q) + '</p>');
+      parts.push('<div class="pqopts">');
+      order.forEach(function (orig, p) {
+        var state = "";
+        if (submitted) {
+          if (orig === q.ans) state = " correct";
+          else if (p === pos) state = " wrong";
+        } else if (p === pos) state = " sel";
+        parts.push('<button type="button" class="pqopt' + state + '" data-id="' + id + '" data-pos="' + p + '"' + (submitted ? " disabled" : "") + '>' +
+          '<span class="pl">' + LETTERS[p] + '</span><span>' + esc(q.opts[orig]) + '</span></button>');
+      });
+      parts.push('</div>');
+      if (submitted) {
+        var cd = order.indexOf(q.ans);
+        var extra = (pos == null) ? "未作答" : (pos === cd ? "你选对了" : "你选了 " + LETTERS[pos] + ". " + esc(q.opts[order[pos]]));
+        parts.push('<div class="pqans">正确答案：<b>' + LETTERS[cd] + ". " + esc(q.opts[q.ans]) + '</b> · ' + extra + '</div>');
+      }
+      parts.push('</article>');
+      html.push(parts.join(""));
+    });
+    el.paperList.innerHTML = html.join("");
+
+    var bar = [];
+    if (!submitted) {
+      bar.push('<div class="pinfo">已答 <b>' + picked + '</b> / ' + total + (picked < total ? ' · 还有 ' + (total - picked) + ' 题' : ' · 已全部作答') + '</div>');
+      bar.push('<div class="actions"><button class="btn primary small" id="submitPaperBtn" type="button">提交试卷</button>' +
+        '<button class="btn small" id="printPaperBtn" type="button">打印本卷</button>' +
+        '<button class="btn small" id="newPaperBtn" type="button">重新开一套</button></div>');
+    } else {
+      bar.push('<div class="pinfo">已提交 · 得分 <b>' + right + '</b> / ' + total + '</div>');
+      bar.push('<div class="actions"><button class="btn primary small" id="exportBtn" type="button">导出答题情况</button>' +
+        '<button class="btn small" id="copyBtn" type="button">复制答题情况</button>' +
+        '<button class="btn small" id="retryWrongBtn" type="button">再练错题</button>' +
+        '<button class="btn small" id="newPaperBtn" type="button">重新开一套</button></div>');
+    }
+    el.paperBar.innerHTML = bar.join("");
+  }
+
+  function pickPaper(id, pos) {
+    var paper = S.paper;
+    if (!paper || paper.submitted) return;
+    if (!paper.orders[id]) return;
+    paper.picks[id] = (paper.picks[id] === pos) ? null : pos;
+    save();
+    var btns = el.paperList.querySelectorAll('.pq[data-id="' + id + '"] .pqopt');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle("sel", Number(btns[i].getAttribute("data-pos")) === paper.picks[id]);
+    }
+    var picked = paperPicked(paper);
+    var info = el.paperBar.querySelector(".pinfo");
+    if (info) {
+      info.innerHTML = '已答 <b>' + picked + '</b> / ' + paper.ids.length +
+        (picked < paper.ids.length ? ' · 还有 ' + (paper.ids.length - picked) + ' 题' : ' · 已全部作答');
+    }
+  }
+
+  function submitPaper() {
+    var paper = S.paper;
+    if (!paper || paper.submitted) return;
+    var missing = paper.ids.length - paperPicked(paper);
+    if (missing > 0 && !window.confirm("还有 " + missing + " 题没做，未作答按错题计。确定提交吗？")) return;
+    var right = 0;
+    paper.ids.forEach(function (id) {
+      var q = BY_ID[id], r = rec(id), pos = paper.picks[id];
+      var ok = pos != null && paper.orders[id][pos] === q.ans;
+      r.seen += 1;
+      S.stats.answered += 1;
+      if (ok) { r.right += 1; r.streak += 1; S.stats.correct += 1; right++; }
+      else { r.wrong += 1; r.streak = 0; }
+    });
+    paper.submitted = true;
+    paper.right = right;
+    paper.at = fmtTime(new Date());
+    save();
+    paintStats();
+    paintWrong();
+    renderPaper();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function paperText() {
+    var paper = S.paper;
+    var total = paper.ids.length;
+    var right = paper.right;
+    var wrongIdsArr = [];
+    var lines = [];
+    lines.push((META.title || "题库") + " · 答题情况");
+    lines.push("时间：" + paper.at);
+    lines.push("试卷：第 " + paper.no + " 套 · " + (paper.kind === "wrong" ? "错题专练" : "全题库") + " · " + total + " 题");
+    lines.push("得分：" + right + "/" + total + "（正确率 " + Math.round(right / total * 100) + "%）");
+    lines.push("已掌握：" + masteredIds().length + "/" + TOTAL + "（连续答对 ≥2 次）");
+    lines.push("");
+    lines.push("【错题明细】");
+    paper.ids.forEach(function (id) {
+      var q = BY_ID[id], pos = paper.picks[id];
+      var ok = pos != null && paper.orders[id][pos] === q.ans;
+      if (!ok) {
+        wrongIdsArr.push(id);
+        lines.push("#" + id + " " + q.q);
+        lines.push("  我的答案：" + (pos == null ? "未作答" : LETTERS[pos] + ". " + q.opts[paper.orders[id][pos]]));
+        lines.push("  正确答案：" + LETTERS[paper.orders[id].indexOf(q.ans)] + ". " + q.opts[q.ans]);
+      }
+    });
+    if (!wrongIdsArr.length) lines.push("（全对，无错题）");
+    lines.push("");
+    lines.push("【全部作答（试卷字母）】");
+    lines.push(paper.ids.map(function (id) {
+      var pos = paper.picks[id];
+      return "#" + id + (pos == null ? "-" : (LETTERS[pos] || "?"));
+    }).join(" "));
+    lines.push("");
+    lines.push("错题ID：" + (wrongIdsArr.length ? wrongIdsArr.join(",") : "无"));
+    return lines.join("\n");
+  }
+
+  function downloadText(name, text) {
+    var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+  }
+
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "toast";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.className = "toast on";
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function () { t.className = "toast"; }, 2200);
+  }
+
+  function copyPaper() {
+    var text = paperText();
+    function done() { toast("已复制，可直接粘贴发给 AI"); }
+    function fail() { toast("复制失败，请改用「导出答题情况」下载 txt"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () {
+        if (legacyCopy(text)) done(); else fail();
+      });
+    } else if (legacyCopy(text)) done();
+    else fail();
+  }
+
+  function exportPaper() {
+    var paper = S.paper;
+    if (!paper || !paper.submitted) return;
+    var stamp = (paper.at || "").replace(/[-: ]/g, "").slice(0, 12);
+    downloadText((META.fileBase || META.title || "题库") + "_答题情况_第" + paper.no + "套_" + stamp + ".txt", paperText());
+    toast("已导出 txt，可发给 AI");
+  }
+
+  function applyView() {
+    var paper = S.view === "paper";
+    el.drillView.hidden = paper;
+    el.paperView.hidden = !paper;
+    el.tabDrill.classList.toggle("on", !paper);
+    el.tabPaper.classList.toggle("on", paper);
+    if (paper) {
+      if (!S.paper) newPaper("all");
+      renderPaper();
+    } else {
+      if (!current) {
+        if (S.currentId && BY_ID[S.currentId] && !S.currentAnswered) show(S.currentId);
+        else {
+          var id = draw();
+          if (id === null) showEmpty();
+          else show(id);
+        }
+      }
+      paintStats();
+      paintStatus();
+    }
+  }
+
+  function switchView(v) {
+    if (v !== "drill" && v !== "paper") return;
+    if (S.view === v) return;
+    S.view = v;
+    save();
+    applyView();
+  }
+
+  /* ---------------- boot & events ---------------- */
+  el.bankCount.textContent = TOTAL;
+  el.bankCount2.textContent = TOTAL;
+  el.underCount.textContent = TOTAL;
+  if (META.title) {
+    document.title = META.title + " · 刷题练习";
+    el.examTitle.textContent = META.title + " · 刷题练习";
+  }
+  if (META.source) el.srcName.textContent = META.source;
+  if (META.ocrNote === false) el.ocrNote.hidden = true;
+  el.nextBtn.addEventListener("click", next);
+  el.modeBtn.addEventListener("click", toggleMode);
+  el.resetBtn.addEventListener("click", reset);
+  el.tabDrill.addEventListener("click", function () { switchView("drill"); });
+  el.tabPaper.addEventListener("click", function () { switchView("paper"); });
+
+  el.paperList.addEventListener("click", function (e) {
+    var b = e.target.closest(".pqopt");
+    if (!b) return;
+    pickPaper(Number(b.getAttribute("data-id")), Number(b.getAttribute("data-pos")));
+  });
+
+  el.paperBar.addEventListener("click", function (e) {
+    var id = e.target.id;
+    if (id === "submitPaperBtn") submitPaper();
+    else if (id === "printPaperBtn") window.print();
+    else if (id === "exportBtn") exportPaper();
+    else if (id === "copyBtn") copyPaper();
+    else if (id === "retryWrongBtn") {
+      if (!newPaper("wrong")) toast("现在还没有错题");
+      else renderPaper();
+    } else if (id === "newPaperBtn") {
+      if (window.confirm("重新生成一套新试卷？当前这套的作答会被替换。")) { newPaper("all"); renderPaper(); }
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (S.view !== "drill") return;
+    if (!current) return;
+    // 焦点在「下一题」按钮上时交给按钮原生激活，避免 Enter 触发两次
+    if (e.target === el.nextBtn && (e.key === "Enter" || e.key === " ")) return;
+
+    if (!answered) {
+      var k = String(e.key || "").toUpperCase();
+      var kl = LETTERS.join("");
+      var idx = -1;
+      if (k.length === 1 && kl.indexOf(k) !== -1) idx = kl.indexOf(k);
+      else if (String(e.key) >= "1" && String(e.key) <= String(Math.min(LETTERS.length, current.order.length))) idx = Number(e.key) - 1;
+      if (idx >= 0 && idx < current.order.length) {
+        e.preventDefault();
+        choose(idx);
+      }
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      next();
+    }
+  });
+
+  paintMode();
+  paintWrong();
+  paintStats();
+
+  if (S.view === "paper") {
+    if (!S.paper) newPaper("all");
+    applyView();
+  } else {
+    if (S.currentId && BY_ID[S.currentId] && !S.currentAnswered) show(S.currentId);
+    else {
+      var first = draw();
+      if (first === null) showEmpty();
+      else show(first);
+    }
+    applyView();
+  }
+})();
+</script>
+</body>
+</html>
