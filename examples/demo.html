@@ -125,22 +125,30 @@
 
   /* ---------- side ---------- */
   .side{display:flex;flex-direction:column;gap:18px}
-  /* 桌面端：整套试卷先跟着页面往上走，标题栏滚出后留边距吸顶；逐题闯关保持固定 */
+  /* 桌面端：整套试卷页签先随页面上移，标题栏滚出后留边距吸顶；内容变高时页签内部滚动 */
   @media (min-width: 941px){
     .side{
       position:sticky;
       top:28px;
       align-self:start;
       width:302px;
+      max-height:calc(100vh - 114px);
+      overflow-y:auto;
+      overscroll-behavior:contain;
       z-index:15;
       background:var(--paper);
       padding-bottom:6px;
+      scrollbar-width:thin;
+      scrollbar-color:var(--ink) transparent;
     }
+    .side::-webkit-scrollbar{width:8px}
+    .side::-webkit-scrollbar-thumb{background:var(--ink);border:2px solid var(--paper)}
+    .side::-webkit-scrollbar-track{background:transparent}
+    /* 逐题闯关：页签留在页面底板里，随整页一起滚动，和其他区域相对位置不变 */
     body[data-view="drill"] .side{
-      position:fixed;
-      top:132px;
-      right:max(24px, calc((100vw - 1180px) / 2 + 24px));
-      width:302px;
+      position:static;
+      max-height:none;
+      overflow:visible;
     }
   }
   .panel{background:var(--card);border:2px solid var(--ink);padding:18px 18px 16px}
