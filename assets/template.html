@@ -125,21 +125,22 @@
 
   /* ---------- side ---------- */
   .side{display:flex;flex-direction:column;gap:18px}
-  /* 桌面端：右侧四个页签浮在视口里，页面滚动时不跟着走 */
+  /* 桌面端：整套试卷先跟着页面往上走，标题栏滚出后留边距吸顶；逐题闯关保持固定 */
   @media (min-width: 941px){
     .side{
-      position:fixed;
-      top:112px;
-      right:max(24px, calc((100vw - 1180px) / 2 + 24px));
+      position:sticky;
+      top:28px;
+      align-self:start;
       width:302px;
-      max-height:calc(100vh - 184px);
-      overflow-y:auto;
-      overscroll-behavior:contain;
       z-index:15;
       background:var(--paper);
       padding-bottom:6px;
-      scrollbar-width:thin;
-      scrollbar-color:var(--line) transparent;
+    }
+    body[data-view="drill"] .side{
+      position:fixed;
+      top:132px;
+      right:max(24px, calc((100vw - 1180px) / 2 + 24px));
+      width:302px;
     }
   }
   .panel{background:var(--card);border:2px solid var(--ink);padding:18px 18px 16px}
@@ -1330,6 +1331,7 @@ const META = __META__;
 
   function applyView() {
     paintSub();
+    document.body.setAttribute("data-view", S.view);
     var paper = S.view === "paper";
     el.drillView.hidden = paper;
     el.paperView.hidden = !paper;
