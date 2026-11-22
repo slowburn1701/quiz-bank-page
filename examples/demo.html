@@ -102,9 +102,9 @@
   .fb-line.note{color:var(--muted);font-size:12.5px;margin-top:2px}
   @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-  .foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px;min-height:46px}
+  .foot{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-top:22px;min-height:46px}
   .footbtns{display:flex;gap:10px;margin-left:auto}
-  .kbdhint{font-size:12px;color:var(--muted);letter-spacing:.3px}
+  .footbtns .btn{min-width:140px;display:inline-flex;align-items:center;justify-content:center}
   .btn{
     font:inherit;font-weight:800;font-size:14px;letter-spacing:.5px;
     border:2px solid var(--ink);background:var(--paper);color:var(--ink);
@@ -118,6 +118,8 @@
   .btn.primary:hover{box-shadow:6px 6px 0 var(--yellow)}
   .btn.wide{display:block;width:100%;text-align:left;margin-bottom:10px;padding:11px 14px}
   .btn.on{background:var(--blue);color:#fff;border-color:var(--ink)}
+  .btn:disabled{opacity:.42;cursor:not-allowed;box-shadow:none;transform:none;background:var(--paper);color:var(--muted);border-color:var(--line)}
+  .btn:disabled:hover{transform:none;box-shadow:none}
   .kbd{display:inline-block;border:1px solid currentColor;padding:1px 6px;font-size:10.5px;border-radius:2px;opacity:.65;margin-left:8px;vertical-align:1px;font-weight:700}
   .under{margin:14px 2px 0;font-size:12px;color:var(--muted);line-height:1.7}
 
@@ -173,12 +175,13 @@
   .pnav button:hover{border-color:var(--ink);color:var(--ink)}
   .pnav button.ok{background:var(--green-bg);border-color:var(--green);color:var(--green)}
   .pnav button.bad{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+  .pnav button.done{background:var(--ink);border-color:var(--ink);color:#fff}
   .pnav button.cur{outline:3px solid var(--blue);outline-offset:1px}
   .pnavlegend{display:flex;align-items:center;gap:10px;margin:10px 0 0;font-size:11px;color:var(--muted)}
   .pnavlegend .sw{width:10px;height:10px;border:1.5px solid var(--line);background:var(--card);display:inline-block}
   .pnavlegend .sw.ok{background:var(--green-bg);border-color:var(--green)}
   .pnavlegend .sw.bad{background:var(--red-bg);border-color:var(--red)}
-  #paperNavPanel{position:sticky;top:16px;z-index:4}
+  .pnavlegend .sw.done{background:var(--ink);border-color:var(--ink)}
   .pq.flash{outline:3px solid var(--blue);outline-offset:2px}
   .pq{background:var(--card);border:2px solid var(--ink);padding:18px 20px 16px;margin-bottom:14px}
   .pqhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
@@ -220,8 +223,44 @@
     .paperbar .actions .btn{flex:1 1 auto}
     .tab{padding:9px 14px;font-size:12px}
   }
+  /* ---------- explanation ---------- */
+  .exp{margin-top:14px;padding-top:11px;border-top:1px dashed #cbc4b6;font-size:13.5px;line-height:1.8;color:var(--ink)}
+  .exp .explbl{display:inline-block;background:var(--ink);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:1.4px;padding:2px 7px;margin-right:8px;vertical-align:1px}
+  .pqexp{margin-top:10px;padding-top:10px;border-top:1px dashed #cbc4b6;font-size:13px;line-height:1.78;color:var(--ink)}
+  .pqexp .explbl{display:inline-block;background:var(--ink);color:#fff;font-size:10px;font-weight:800;letter-spacing:1.2px;padding:2px 6px;margin-right:7px;vertical-align:1px}
+
+  /* ---------- wrong book modal ---------- */
+  .panel h3 .popen{margin-left:auto;font:inherit;font-size:10.5px;letter-spacing:1px;font-weight:800;background:none;border:0;color:var(--blue);cursor:pointer;padding:2px 0}
+  .panel h3 .popen:hover{text-decoration:underline}
+  .modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:22px}
+  .modal[hidden]{display:none}
+  .modal-mask{position:absolute;inset:0;background:rgba(20,20,20,.58)}
+  .modal-card{position:relative;width:min(860px,100%);max-height:min(86vh,940px);display:flex;flex-direction:column;background:var(--paper);border:2px solid var(--ink);box-shadow:12px 12px 0 rgba(20,20,20,.28);animation:pop .16s ease}
+  .modal-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:2px solid var(--ink);background:var(--card)}
+  .modal-head h3{margin:0;font-size:15px;letter-spacing:1.2px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .modal-x{margin-left:auto;font:inherit;font-size:22px;line-height:1;font-weight:800;background:none;border:2px solid var(--ink);width:34px;height:34px;cursor:pointer;display:grid;place-items:center}
+  .modal-x:hover{background:var(--ink);color:#fff}
+  .modal-body{overflow:auto;padding:18px 22px 24px}
+  .mb-item{border:1.5px solid var(--line);background:var(--card);padding:14px 16px;margin-bottom:12px}
+  .mb-item:last-child{margin-bottom:0}
+  .mb-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .mb-q{font-size:14.5px;font-weight:700;line-height:1.6;margin:0 0 10px}
+  .mb-opt{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.6;padding:5px 8px;border:1.5px solid transparent}
+  .mb-opt .ml{font-weight:800;flex:0 0 16px}
+  .mb-opt.correct{border-color:var(--green);background:var(--green-bg)}
+  .mb-opt.wrong{border-color:var(--red);background:var(--red-bg)}
+  .mb-meta{font-size:12px;color:var(--muted);line-height:1.8;margin-top:9px}
+  .mb-meta b{color:var(--ink)}
+  .mb-empty{color:var(--muted);font-size:13px;line-height:1.8;padding:8px 2px}
+
+  @media (max-width: 940px){
+    .modal{padding:12px}
+    .modal-card{max-height:88vh}
+    .modal-body{padding:14px}
+  }
+
   @media print{
-    .side,.viewtabs,.statusline,footer,.paperbar,.under,.top .score{display:none !important}
+    .side,.viewtabs,.statusline,footer,.paperbar,.under,.top .score,.modal{display:none !important}
     body{background:#fff}
     .wrap{max-width:none;padding:0}
     main{display:block;margin:0}
@@ -243,6 +282,17 @@
   @media (prefers-reduced-motion: reduce){
     *{animation:none !important;transition:none !important}
   }
+
+  .modal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(20,20,20,.55);padding:24px}
+  .modal[hidden]{display:none}
+  .modalbox{background:var(--paper);border:2px solid var(--ink);box-shadow:10px 10px 0 rgba(20,20,20,.35);width:min(760px,100%);max-height:86vh;display:flex;flex-direction:column}
+  .modalhead{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:2px solid var(--ink);background:var(--paper)}
+  .modalhead h3{margin:0;font-size:16px;letter-spacing:.4px}
+  .modalhead .badge{margin-left:2px}
+  .modalclose{margin-left:auto;font:inherit;font-size:11px;font-weight:800;letter-spacing:1px;background:var(--ink);color:#fff;border:2px solid var(--ink);padding:5px 10px;cursor:pointer}
+  .modalclose:hover{background:var(--red);border-color:var(--red)}
+  .modalbody{overflow:auto;padding:18px 20px}
+  @media(max-width:640px){ .modal{padding:10px}.modalbox{max-height:92vh}.modalhead h3{font-size:14px} }
 </style>
 </head>
 <body>
@@ -253,7 +303,7 @@
       <div class="mark" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i><i class="m4"></i></div>
       <div class="titles">
         <h1 id="examTitle">刷题练习</h1>
-        <p class="sub">题库 <b id="bankCount">0</b> 题 · 整套试卷 / 逐题闯关 · 选项随机打乱 · 错题自动加频</p>
+        <p class="sub" id="subLine">题库 <b id="bankCount">0</b> 题 · 整套试卷 · 选项随机打乱 · 错题自动加频</p>
       </div>
     </div>
     <div class="score" aria-label="答题统计">
@@ -291,10 +341,9 @@
           <div class="fb" id="fb" role="status" aria-live="polite" hidden></div>
           <div class="foot">
             <div class="footbtns">
-              <button class="btn" id="prevBtn" type="button" hidden>上一题</button>
-              <button class="btn primary" id="nextBtn" type="button" hidden>下一题<span class="kbd">Enter</span></button>
+              <button class="btn" id="prevBtn" type="button" hidden>上一题<span class="kbd">←</span></button>
+              <button class="btn primary" id="nextBtn" type="button" disabled>下一题<span class="kbd">Enter</span></button>
             </div>
-            <span class="kbdhint" id="kbdHint">A / B / C / D 或 1–4 作答</span>
           </div>
         </article>
 
@@ -319,12 +368,11 @@
       <div class="panel" id="paperNavPanel" hidden>
         <h3>试卷总览 <span class="badge" id="paperNavDone">0</span></h3>
         <div class="pnav" id="paperNav"></div>
-        <p class="pnavlegend"><i class="sw ok"></i>答对 <i class="sw bad"></i>答错 <i class="sw"></i>未答</p>
-        <p class="mininote">点题号跳到对应题目；答对变绿、答错变红，未答保持无色。</p>
+        <p class="pnavlegend" id="pnavLegend"></p>
       </div>
 
-      <div class="panel">
-        <h3>错题本 <span class="badge" id="wrongCount">0</span></h3>
+      <div class="panel" id="wrongPanel">
+        <h3>错题本 <span class="badge" id="wrongCount">0</span><button class="popen" id="openWrongBtn" type="button">打开 →</button></h3>
         <div class="wronglist" id="wrongList"></div>
       </div>
 
@@ -342,7 +390,18 @@
         </div>
       </details>
     </aside>
-  </main>
+  
+    <div class="modal" id="wrongModal" hidden>
+      <div class="modalbox" role="dialog" aria-modal="true" aria-labelledby="wrongModalTitle">
+        <div class="modalhead">
+          <h3 id="wrongModalTitle">错题本</h3>
+          <span class="badge" id="wrongModalCount">0</span>
+          <button class="modalclose" id="wrongModalClose" type="button">关闭 Esc</button>
+        </div>
+        <div class="modalbody" id="wrongModalBody"></div>
+      </div>
+    </div>
+</main>
 
   <footer>
     <span>已生成单文件网页：双击即可离线打开，手机浏览器同样可用。</span>
@@ -351,7 +410,7 @@
 </div>
 
 <script>
-const BANK = [{"id":1,"q":"OSI 参考模型分为几层？","opts":["5 层","7 层","4 层"],"ans":1},{"id":2,"q":"IPv4 地址长度为 32 位。","opts":["正确","错误"],"ans":0},{"id":3,"q":"下列哪个协议工作在传输层？","opts":["HTTP","TCP","IP","ARP"],"ans":1},{"id":4,"q":"交换机默认工作在 OSI 的哪一层？","opts":["物理层","数据链路层","网络层","传输层"],"ans":1},{"id":5,"q":"下列哪个是私有地址？","opts":["10.0.0.1","8.8.8.8","1.1.1.1","114.114.114.114","223.5.5.5"],"ans":0},{"id":6,"q":"下列哪个是 IPv6 地址？","opts":["192.168.1.1","2001:db8::1","255.255.255.0","10.0.0.1"],"ans":1},{"id":7,"q":"DNS 的主要作用是？","opts":["分配 IP 地址","域名解析","路由选择","数据加密","流量控制","物理寻址"],"ans":1}];
+const BANK = [{"id":1,"q":"OSI 参考模型分为几层？","opts":["5 层","7 层","4 层"],"ans":1,"exp":"OSI 参考模型从下到上分物理层、数据链路层、网络层、传输层、会话层、表示层、应用层，共 7 层。"},{"id":2,"q":"IPv4 地址长度为 32 位。","opts":["正确","错误"],"ans":0},{"id":3,"q":"下列哪个协议工作在传输层？","opts":["HTTP","TCP","IP","ARP"],"ans":1,"exp":"TCP 是传输层协议；HTTP 在应用层，IP 在网络层，ARP 负责把 IP 地址解析成 MAC 地址。"},{"id":4,"q":"交换机默认工作在 OSI 的哪一层？","opts":["物理层","数据链路层","网络层","传输层"],"ans":1,"exp":"交换机根据 MAC 地址转发帧，默认工作在数据链路层；路由器工作在网络层。"},{"id":5,"q":"下列哪个是私有地址？","opts":["10.0.0.1","8.8.8.8","1.1.1.1","114.114.114.114","223.5.5.5"],"ans":0,"exp":"私有地址段是 10.0.0.0/8、172.16.0.0/12、192.168.0.0/16；10.0.0.1 属于第一段，其余是公网地址。"},{"id":6,"q":"下列哪个是 IPv6 地址？","opts":["192.168.1.1","2001:db8::1","255.255.255.0","10.0.0.1"],"ans":1,"exp":"IPv6 地址用冒号分隔的十六进制表示，如 2001:db8::1；其余三个都是 IPv4 地址。"},{"id":7,"q":"DNS 的主要作用是？","opts":["分配 IP 地址","域名解析","路由选择","数据加密","流量控制","物理寻址"],"ans":1,"exp":"DNS 把域名解析成 IP 地址；分配 IP 地址是 DHCP 的工作，路由选择由路由器完成。"}];
 const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"示例题库（仅用于演示数据结构，非完整课程）","fileBase":"计算机网络基础"};
 </script>
 <script>
@@ -377,7 +436,6 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
     fb: document.getElementById("fb"),
     nextBtn: document.getElementById("nextBtn"),
     prevBtn: document.getElementById("prevBtn"),
-    kbdHint: document.getElementById("kbdHint"),
     stAnswered: document.getElementById("stAnswered"),
     stRate: document.getElementById("stRate"),
     stWrong: document.getElementById("stWrong"),
@@ -403,7 +461,15 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
     paperBar: document.getElementById("paperBar"),
     paperNav: document.getElementById("paperNav"),
     paperNavPanel: document.getElementById("paperNavPanel"),
-    paperNavDone: document.getElementById("paperNavDone")
+    paperNavDone: document.getElementById("paperNavDone"),
+    pnavLegend: document.getElementById("pnavLegend"),
+    subLine: document.getElementById("subLine"),
+    wrongPanel: document.getElementById("wrongPanel"),
+    openWrongBtn: document.getElementById("openWrongBtn"),
+    wrongModal: document.getElementById("wrongModal"),
+    wrongModalBody: document.getElementById("wrongModalBody"),
+    wrongModalCount: document.getElementById("wrongModalCount"),
+    wrongModalClose: document.getElementById("wrongModalClose")
   };
 
   var S = load();
@@ -552,15 +618,23 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
   }
 
   function paintPrevNext() {
-    el.prevBtn.hidden = histIdx <= 0;
-    el.nextBtn.hidden = !answered;
-    el.kbdHint.hidden = false;
-    if (answered) {
-      el.kbdHint.textContent = histIdx > 0 ? "← 上一题 · Enter 下一题" : "按 Enter 进入下一题";
-    } else {
-      var n = current ? current.order.length : 4;
-      el.kbdHint.textContent = LETTERS.slice(0, n).join(" / ") + " 或 1–" + n + " 作答" + (histIdx > 0 ? " · ← 可回看上一题" : "");
-    }
+    var hasPrev = histIdx > 0;
+    el.prevBtn.hidden = !hasPrev;
+    el.prevBtn.disabled = !hasPrev;
+    el.nextBtn.hidden = !current;
+    el.nextBtn.disabled = !answered;
+  }
+
+  function appendExp(box, text) {
+    if (!text) return;
+    var d = document.createElement("div");
+    d.className = "exp";
+    var l = document.createElement("span");
+    l.className = "explbl";
+    l.textContent = "解析";
+    d.appendChild(l);
+    d.appendChild(document.createTextNode(text));
+    box.appendChild(d);
   }
 
   function renderQuestion(entry) {
@@ -642,7 +716,6 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
     el.fb.hidden = true;
     el.nextBtn.hidden = true;
     el.prevBtn.hidden = true;
-    el.kbdHint.hidden = true;
     paintStats();
     paintStatus();
   }
@@ -668,6 +741,7 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
     } else {
       r.wrong += 1;
       r.streak = 0;
+      r.lastWrong = current.order[pos];
       S.stats.streak = 0;
       scheduleRetry(q.id);
     }
@@ -740,9 +814,9 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
       el.fb.appendChild(l3);
     }
 
+    appendExp(el.fb, current.q.exp);
     el.nextBtn.hidden = false;
-    el.kbdHint.hidden = false;
-    el.kbdHint.textContent = histIdx > 0 ? "← 上一题 · Enter 下一题" : "按 Enter 进入下一题";
+    el.nextBtn.disabled = false;
   }
 
   function paintStats() {
@@ -910,17 +984,24 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
 
   function renderPaperNav() {
     var paper = S.paper;
-    if (!paper) { el.paperNav.innerHTML = ""; return; }
+    if (!paper) { el.paperNav.innerHTML = ""; el.pnavLegend.innerHTML = ""; return; }
+    var submitted = !!paper.submitted;
     var html = [];
     paper.ids.forEach(function (id, k) {
       var pos = paper.picks[id];
       var cls = "";
-      if (pos != null) cls = paper.orders[id][pos] === BY_ID[id].ans ? " ok" : " bad";
+      if (pos != null) {
+        if (!submitted) cls = " done";
+        else cls = paper.orders[id][pos] === BY_ID[id].ans ? " ok" : " bad";
+      }
       if (navCur === id) cls += " cur";
       html.push('<button type="button" class="' + cls.trim() + '" data-id="' + id + '" title="第 ' + (k + 1) + ' 题 · 原题 ' + id + '">' + (k + 1) + '</button>');
     });
     el.paperNav.innerHTML = html.join("");
     el.paperNavDone.textContent = paperPicked(paper);
+    el.pnavLegend.innerHTML = submitted
+      ? '<i class="sw ok"></i>答对 <i class="sw bad"></i>答错 <i class="sw"></i>未答'
+      : '<i class="sw done"></i>已答 <i class="sw"></i>未答';
   }
 
   function jumpToPaperQ(id) {
@@ -970,9 +1051,7 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
 
     var head = [];
     head.push('<div class="phtop"><h2>第 ' + paper.no + ' 套 · ' + kindLabel + ' · ' + total + ' 题</h2><span class="chip ghost">选项乱序</span></div>');
-    if (!submitted) {
-      head.push('<p class="phsub">点选项作答，可随时改动。全部做完后点下方「提交试卷」，立刻看到得分和错题。提交后可导出/复制答题情况交给 AI，安排下一轮；错题也会进入错题本，在逐题闯关里被更频繁地问到。</p>');
-    } else {
+    if (submitted) {
       head.push('<div class="scorebox">' +
         '<div><b>' + right + '/' + total + '</b><span>得分</span></div>' +
         '<div><b>' + Math.round(right / total * 100) + '%</b><span>正确率</span></div>' +
@@ -1010,6 +1089,7 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
         var cd = order.indexOf(q.ans);
         var extra = (pos == null) ? "未作答" : (pos === cd ? "你选对了" : "你选了 " + LETTERS[pos] + ". " + esc(q.opts[order[pos]]));
         parts.push('<div class="pqans">正确答案：<b>' + LETTERS[cd] + ". " + esc(q.opts[q.ans]) + '</b> · ' + extra + '</div>');
+        if (q.exp) parts.push('<div class="pqexp"><span class="explbl">解析</span>' + esc(q.exp) + '</div>');
       }
       parts.push('</article>');
       html.push(parts.join(""));
@@ -1064,7 +1144,7 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
       r.seen += 1;
       S.stats.answered += 1;
       if (ok) { r.right += 1; r.streak += 1; S.stats.correct += 1; right++; }
-      else { r.wrong += 1; r.streak = 0; }
+      else { r.wrong += 1; r.streak = 0; r.lastWrong = (pos == null ? null : paper.orders[id][pos]); }
     });
     paper.submitted = true;
     paper.right = right;
@@ -1169,7 +1249,67 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
     toast("已导出 txt，可发给 AI");
   }
 
+  function paintSub() {
+    var mode = S.view === "paper" ? "整套试卷" : "逐题闯关";
+    el.subLine.innerHTML = '题库 <b>' + TOTAL + '</b> 题 · ' + mode + ' · 选项随机打乱 · 错题自动加频';
+  }
+
+  function wrongSorted() {
+    return BANK.filter(function (q) { return rec(q.id).wrong > 0; })
+      .sort(function (a, b) { return rec(b.id).wrong - rec(a.id).wrong || a.id - b.id; });
+  }
+
+  function renderWrongBook() {
+    var list = wrongSorted();
+    el.wrongModalCount.textContent = list.length;
+    el.wrongModalBody.innerHTML = "";
+    if (!list.length) {
+      var p = document.createElement("p");
+      p.className = "mb-empty";
+      p.textContent = "错题本还是空的。答错的题会自动收进来，这里会显示完整题目、你的答案和解析。";
+      el.wrongModalBody.appendChild(p);
+      return;
+    }
+    var html = [];
+    list.forEach(function (q) {
+      var r = rec(q.id);
+      var parts = [];
+      parts.push('<div class="mb-item"><div class="mb-head">' +
+        '<span class="pqno">原题 ' + q.id + '</span>' +
+        '<span class="chip hot">错过 ' + r.wrong + ' 次</span>' +
+        (q.exp ? '<span class="chip ghost">有解析</span>' : '') +
+        '</div>');
+      parts.push('<p class="mb-q">' + esc(q.q) + '</p>');
+      q.opts.forEach(function (o, i) {
+        var cls = "";
+        if (i === q.ans) cls = " correct";
+        else if (r.lastWrong === i) cls = " wrong";
+        parts.push('<div class="mb-opt' + cls + '"><span class="ml">' + LETTERS[i] + '.</span><span>' + esc(o) + '</span></div>');
+      });
+      parts.push('<div class="mb-meta">正确答案：<b>' + LETTERS[q.ans] + ". " + esc(q.opts[q.ans]) + '</b><br>' +
+        '你的答案：' + (r.lastWrong == null ? "未记录具体选项（早期记录）" : '<b>' + LETTERS[r.lastWrong] + ". " + esc(q.opts[r.lastWrong]) + '</b>') + '</div>');
+      if (q.exp) parts.push('<div class="pqexp"><span class="explbl">解析</span>' + esc(q.exp) + '</div>');
+      parts.push('</div>');
+      html.push(parts.join(""));
+    });
+    el.wrongModalBody.innerHTML = html.join("");
+  }
+
+  function openWrongBook() {
+    renderWrongBook();
+    el.wrongModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    try { el.wrongModalClose.focus(); } catch (e) {}
+  }
+
+  function closeWrongBook() {
+    el.wrongModal.hidden = true;
+    document.body.style.overflow = "";
+    try { el.openWrongBtn.focus(); } catch (e) {}
+  }
+
   function applyView() {
+    paintSub();
     var paper = S.view === "paper";
     el.drillView.hidden = paper;
     el.paperView.hidden = !paper;
@@ -1205,7 +1345,6 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
   }
 
   /* ---------------- boot & events ---------------- */
-  el.bankCount.textContent = TOTAL;
   el.bankCount2.textContent = TOTAL;
   el.underCount.textContent = TOTAL;
   if (META.title) {
@@ -1216,6 +1355,15 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
   if (META.ocrNote === false) el.ocrNote.hidden = true;
   el.nextBtn.addEventListener("click", next);
   el.prevBtn.addEventListener("click", prev);
+  el.openWrongBtn.addEventListener("click", openWrongBook);
+  el.wrongPanel.addEventListener("click", function (e) {
+    if (e.target.closest("#openWrongBtn")) return;
+    openWrongBook();
+  });
+  el.wrongModalClose.addEventListener("click", closeWrongBook);
+  el.wrongModal.addEventListener("click", function (e) {
+    if (e.target === el.wrongModal) closeWrongBook();
+  });
   el.modeBtn.addEventListener("click", toggleMode);
   el.resetBtn.addEventListener("click", reset);
   el.tabDrill.addEventListener("click", function () { switchView("drill"); });
@@ -1247,6 +1395,8 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
   });
 
   document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !el.wrongModal.hidden) { closeWrongBook(); return; }
+    if (!el.wrongModal.hidden) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (S.view !== "drill") return;
     if (!current) return;
@@ -1282,5 +1432,15 @@ const META = {"title":"计算机网络基础","key":"net-basics-demo","source":"
   applyView();
 })();
 </script>
+  <div class="modal" id="wrongModal" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="wrongModalTitle">
+      <div class="modal-head">
+        <h3 id="wrongModalTitle">错题本 <span class="badge" id="wrongModalCount">0</span></h3>
+        <button class="modal-x" id="wrongModalClose" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body" id="wrongModalBody"></div>
+    </div>
+  </div>
 </body>
 </html>

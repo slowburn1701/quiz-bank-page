@@ -29,10 +29,11 @@ const OUT = path.resolve(OUT_ARG || path.join(path.dirname(HTML), 'quiz-test'));
 const DL = path.join(OUT, 'downloads');
 const DATA = JSON.parse(fs.readFileSync(BANK_ARG, 'utf8'));
 const BANK = DATA.questions.map(q => ({
-  id: q.id, q: q.q, opts: q.opts.slice(), ans: q.ans
+  id: q.id, q: q.q, opts: q.opts.slice(), ans: q.ans, exp: q.exp
 }));
 const META = DATA.meta || {};
 const N = BANK.length;
+const EXP_N = BANK.filter(q => q.exp).length;
 const BY_ID = new Map(BANK.map(q => [q.id, q]));
 const TOTAL_OPTS = BANK.reduce((a, q) => a + q.opts.length, 0);
 
@@ -134,7 +135,7 @@ function ok(cond, msg) {
       drillQ: document.getElementById('qText').textContent,
       title: document.title,
       h1: document.getElementById('examTitle').textContent,
-      countChip: document.getElementById('bankCount').textContent
+      countChip: document.getElementById('subLine').textContent
     };
   })()`);
 
@@ -175,7 +176,7 @@ function ok(cond, msg) {
   ok(!pageSrc.includes('__BANK__') && !pageSrc.includes('__META__'), '占位符已替换');
   let v = await viewState();
   ok(v.paperVisible && !v.drillVisible, '默认显示整套试卷');
-  ok(v.countChip === String(N), '题量显示 ' + N);
+  ok(v.countChip.includes('题库 ' + N + ' 题'), '题量与模式副标题：' + v.countChip);
   if (META.title) ok(v.title.includes(META.title) && v.h1.includes(META.title), '标题注入：' + v.title);
 
   console.log('\n[1] 试卷结构');
@@ -206,12 +207,12 @@ function ok(cond, msg) {
   v = await viewState();
   ok(v.bar.includes('已答 ' + N + ' / ' + N), '刷新后作答保留');
   ok(/第 1 套/.test(v.head), '刷新后仍是第 1 套');
-  ok((await evalJS('document.querySelectorAll("#paperNav button.ok").length')) === N, '答对题号全部变绿');
+  ok((await evalJS('document.querySelectorAll("#paperNav button.done").length')) === N, '提交前已答题号标为已答（不判对错）');
   await evalJS('document.querySelectorAll("#paperNav button")[2].click(); true');
   await sleep(300);
   ok((await evalJS('document.querySelectorAll("#paperNav button.cur").length')) === 1 &&
      (await evalJS('document.querySelectorAll("#paperNav button")[2].classList.contains("cur")')), '点总览题号有高亮');
-  ok((await evalJS('document.querySelectorAll("#paperNav button.ok").length')) === N, '跳转不改变对错颜色');
+  ok((await evalJS('document.querySelectorAll("#paperNav button.done").length')) === N, '跳转不改变已答状态');
 
   console.log('\n[3] 提交与计分');
   await evalJS('document.getElementById("submitPaperBtn").click(); true');
@@ -223,6 +224,8 @@ function ok(cond, msg) {
   ok((await evalJS('document.querySelectorAll(".pqopt:disabled").length')) === TOTAL_OPTS, '提交后选项锁定');
   ok((await evalJS('document.querySelectorAll(".pqopt.correct").length')) === N, '正确项全部标绿');
   ok((await evalJS('document.querySelectorAll(".pqopt.wrong").length')) === 0, '无错选标红');
+  ok((await evalJS('document.querySelectorAll("#paperNav button.ok").length')) === N, '提交后答对题号全部变绿');
+  ok((await evalJS('document.querySelectorAll(".pqexp").length')) === EXP_N, '有解析的题显示解析：' + EXP_N);
   await shot('shot-paper-result.png');
 
   console.log('\n[4] 导出答题情况');
@@ -256,6 +259,15 @@ function ok(cond, msg) {
   ok((await evalJS('document.querySelectorAll(".pqopt.wrong").length')) === 2, '2 个错选标红');
   ok((await evalJS('document.querySelectorAll("#paperNav button.bad").length')) === 2, '总览里 2 个题号变红');
   ok((await evalJS('document.querySelectorAll("#paperNav button.ok").length')) === N - 2, '其余题号保持绿色');
+  await evalJS('document.getElementById("wrongPanel").click(); true');
+  await sleep(350);
+  ok(!(await evalJS('document.getElementById("wrongModal").hidden')), '点错题本打开弹窗');
+  ok((await evalJS('document.querySelectorAll("#wrongModalBody .mb-item").length')) === 2, '弹窗里 2 道错题');
+  ok((await evalJS('document.querySelectorAll("#wrongModalBody .pqexp").length')) >= 1, '弹窗显示解析');
+  ok(/正确答案/.test(await evalJS('document.getElementById("wrongModalBody").innerText')), '弹窗显示正确答案与你的答案');
+  await evalJS('document.getElementById("wrongModalClose").click(); true');
+  await sleep(250);
+  ok(await evalJS('document.getElementById("wrongModal").hidden'), '弹窗可关闭');
   await shot('shot-paper-wrong.png');
   const before = fs.readdirSync(DL).filter(f => f.endsWith('.txt')).length;
   await evalJS('document.getElementById("exportBtn").click(); true');
@@ -304,17 +316,27 @@ function ok(cond, msg) {
   if (bankQ) {
     const pos = drill.opts.findIndex(o => o.t === bankQ.opts[bankQ.ans]);
     ok(pos >= 0, '正确选项已渲染');
+    ok((await evalJS('!!document.getElementById("kbdHint")')) === false, '旧底部提示已移除');
+    ok((await evalJS('document.getElementById("nextBtn").disabled')) === true, '未答时下一题禁用');
     const letter = 'abcdefgh'[pos];
     await evalJS(`document.dispatchEvent(new KeyboardEvent('keydown', { key: '${letter}', bubbles: true })); true`);
     const fb = await evalJS('document.getElementById("fb").hidden ? "" : document.getElementById("fb").innerText');
     ok(/回答正确/.test(fb), '键盘作答判定：' + fb.split('\n')[0]);
   }
+  ok((await evalJS('document.getElementById("nextBtn").disabled')) === false, '答完后下一题可点');
+  if (bankQ && bankQ.exp) ok((await evalJS('document.querySelectorAll("#fb .exp").length')) === 1, '答完显示解析');
   ok((await evalJS('document.getElementById("prevBtn").hidden')) === true, '第一题时没有上一题');
   await evalJS('document.getElementById("nextBtn").click(); true');
   await sleep(300);
   const secondText = await evalJS('document.getElementById("qText").textContent');
   await answerDrillCorrect();
   ok((await evalJS('document.getElementById("prevBtn").hidden')) === false, '第二题答完后出现上一题');
+  const sizes = await evalJS(`(() => {
+    const a = document.getElementById('prevBtn').getBoundingClientRect(), b = document.getElementById('nextBtn').getBoundingClientRect();
+    return { aw: Math.round(a.width), bw: Math.round(b.width), ap: document.getElementById('prevBtn').innerText, bn: document.getElementById('nextBtn').innerText };
+  })()`);
+  ok(Math.abs(sizes.aw - sizes.bw) <= 2, '上一题/下一题同尺寸：' + sizes.aw + ' vs ' + sizes.bw);
+  ok(/←/.test(sizes.ap) && /Enter/.test(sizes.bn), '按钮带键盘 chip');
   const firstText = drill.q;
   await evalJS('document.getElementById("prevBtn").click(); true');
   await sleep(300);

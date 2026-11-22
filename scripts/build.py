@@ -131,7 +131,20 @@ def validate(data):
         if not isinstance(ans, int) or isinstance(ans, bool) or not (0 <= ans < len(clean)):
             fail(where + " ans 必须是 0–%d 的整数下标" % (len(clean) - 1))
 
-        out.append({"id": qid, "q": text, "opts": clean, "ans": ans})
+        exp = q.get("exp")
+        if exp is not None:
+            exp = str(exp).strip()
+            if not exp:
+                exp = None
+            else:
+                lint_text(exp, where + " 的解析", warnings)
+                if len(exp) < 8:
+                    warnings.append(where + " 的解析过短，确认是否说清了为什么")
+
+        item = {"id": qid, "q": text, "opts": clean, "ans": ans}
+        if exp:
+            item["exp"] = exp
+        out.append(item)
 
     meta["title"] = title
     meta.setdefault("key", slug(title))
