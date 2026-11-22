@@ -125,6 +125,23 @@
 
   /* ---------- side ---------- */
   .side{display:flex;flex-direction:column;gap:18px}
+  /* 桌面端：右侧四个页签浮在视口里，页面滚动时不跟着走 */
+  @media (min-width: 941px){
+    .side{
+      position:fixed;
+      top:112px;
+      right:max(24px, calc((100vw - 1180px) / 2 + 24px));
+      width:302px;
+      max-height:calc(100vh - 184px);
+      overflow-y:auto;
+      overscroll-behavior:contain;
+      z-index:15;
+      background:var(--paper);
+      padding-bottom:6px;
+      scrollbar-width:thin;
+      scrollbar-color:var(--line) transparent;
+    }
+  }
   .panel{background:var(--card);border:2px solid var(--ink);padding:18px 18px 16px}
   .panel h3{margin:0 0 12px;font-size:13px;letter-spacing:1.6px;font-weight:800;display:flex;align-items:center;gap:8px}
   .panel summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between}
@@ -162,7 +179,7 @@
   .tab:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 
   /* ---------- paper mode ---------- */
-  .paperhead{background:var(--card);border:2px solid var(--ink);box-shadow:var(--shadow);padding:22px 26px;margin-bottom:18px}
+  .paperhead{background:var(--card);border:2px solid var(--ink);box-shadow:var(--shadow);padding:24px 28px;margin-bottom:22px}
   .phtop{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .phtop h2{margin:0;font-size:21px;letter-spacing:.3px;font-weight:800}
   .phsub{margin:10px 0 0;font-size:12.5px;line-height:1.75;color:var(--muted)}
@@ -183,15 +200,15 @@
   .pnavlegend .sw.bad{background:var(--red-bg);border-color:var(--red)}
   .pnavlegend .sw.done{background:var(--ink);border-color:var(--ink)}
   .pq.flash{outline:3px solid var(--blue);outline-offset:2px}
-  .pq{background:var(--card);border:2px solid var(--ink);padding:18px 20px 16px;margin-bottom:14px}
-  .pqhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-  .pqno{background:var(--ink);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:1px;padding:3px 9px}
-  .pqtext{margin:0 0 12px;font-size:16.5px;line-height:1.62;font-weight:700;letter-spacing:.2px}
-  .pqopts{display:grid;gap:8px}
-  .pqopt{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;font:inherit;font-size:14.5px;line-height:1.55;color:var(--ink);background:var(--card);border:1.5px solid var(--line);padding:9px 12px;cursor:pointer;transition:border-color .12s ease,background .12s ease}
-  .pqopt .pl{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border:1.5px solid var(--ink);background:var(--paper);font-size:11.5px;font-weight:800;margin-top:1px}
-  .pqopt:hover:not(:disabled){border-color:var(--ink);background:#fff}
-  .pqopt:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+  .pq{background:var(--card);border:2px solid var(--ink);padding:26px 28px 22px;margin-bottom:20px}
+  .pqhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .pqno{background:var(--ink);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:1px;padding:4px 10px}
+  .pqtext{margin:0 0 18px;font-size:18.5px;line-height:1.75;font-weight:700;letter-spacing:.2px}
+  .pqopts{display:grid;gap:10px}
+  .pqopt{display:flex;align-items:flex-start;gap:14px;width:100%;text-align:left;font:inherit;font-size:16px;line-height:1.6;color:var(--ink);background:var(--card);border:2px solid var(--ink);padding:14px 16px;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,background .12s ease,border-color .12s ease}
+  .pqopt .pl{width:31px;height:31px;flex:0 0 31px;display:grid;place-items:center;border:2px solid var(--ink);background:var(--paper);font-size:13px;font-weight:800;line-height:1;margin-top:1px}
+  .pqopt:hover:not(:disabled){border-color:var(--ink);background:#fff;transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink)}
+  .pqopt:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
   .pqopt.sel{border-color:var(--blue);background:#e9f0f9}
   .pqopt.sel .pl{background:var(--blue);border-color:var(--blue);color:#fff}
   .pqopt.correct{border-color:var(--green);background:var(--green-bg)}
@@ -199,7 +216,7 @@
   .pqopt.wrong{border-color:var(--red);background:var(--red-bg)}
   .pqopt.wrong .pl{background:var(--red);border-color:var(--red);color:#fff}
   .pqopt:disabled{cursor:default}
-  .pqans{margin-top:10px;font-size:12.5px;color:var(--muted);line-height:1.7}
+  .pqans{margin-top:14px;font-size:13.5px;color:var(--muted);line-height:1.8}
   .pqans b{color:var(--green);font-weight:800}
   #paperView{padding-bottom:126px}
   .paperbar{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:1180px;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--paper);border:2px solid var(--ink);border-bottom:0;box-shadow:0 -4px 0 rgba(20,20,20,.08);padding:12px 18px}
@@ -212,8 +229,11 @@
 
   @media (max-width: 940px){
     .paperhead{padding:18px 18px;box-shadow:5px 5px 0 #141414}
-    .pq{padding:14px 14px 12px}
-    .pqtext{font-size:15px}
+    .pq{padding:18px 16px 16px;margin-bottom:14px}
+    .pqtext{font-size:17px;line-height:1.7;margin-bottom:14px}
+    .pqopt{font-size:15px;padding:12px 13px;gap:11px}
+    .pqopt .pl{width:28px;height:28px;flex-basis:28px;font-size:12px}
+    .pqopts{gap:9px}
     .phtop h2{font-size:18px}
     .scorebox{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .scorebox div{min-width:0}
@@ -226,7 +246,7 @@
   /* ---------- explanation ---------- */
   .exp{margin-top:14px;padding-top:11px;border-top:1px dashed #cbc4b6;font-size:13.5px;line-height:1.8;color:var(--ink)}
   .exp .explbl{display:inline-block;background:var(--ink);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:1.4px;padding:2px 7px;margin-right:8px;vertical-align:1px}
-  .pqexp{margin-top:10px;padding-top:10px;border-top:1px dashed #cbc4b6;font-size:13px;line-height:1.78;color:var(--ink)}
+  .pqexp{margin-top:14px;padding-top:12px;border-top:1px dashed #cbc4b6;font-size:14px;line-height:1.85;color:var(--ink)}
   .pqexp .explbl{display:inline-block;background:var(--ink);color:#fff;font-size:10px;font-weight:800;letter-spacing:1.2px;padding:2px 6px;margin-right:7px;vertical-align:1px}
 
   /* ---------- wrong book modal ---------- */
